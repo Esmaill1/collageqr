@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Daytime: grid paper & ink (warm off-white / warm accent) */
+  --bg: #f7f3ea;
+  --ink: #1a1714;
+  --accent: #c05621;
+  --grid-line: rgba(26, 23, 20, 0.08);
+}
+
+[data-theme="dark"] {
+  /* Evening: dark amber (deep charcoal / amber, low glare) */
+  --bg: #1a1714;
+  --ink: #e8e0d2;
+  --accent: #d9a441;
+  --grid-line: rgba(232, 224, 210, 0.07);
+}
+
+html {
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Desk Cassette (Wave 5): gentle reel spin so the music note feels alive. */
+@keyframes cassette-spin {
+  from {
+    transform: rotate(-6deg) scale(1);
+  }
+  50% {
+    transform: rotate(6deg) scale(1.08);
+  }
+  to {
+    transform: rotate(-6deg) scale(1);
+  }
+}
+
+.cassette-spin {
+  display: inline-block;
+  animation: cassette-spin 1.6s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}

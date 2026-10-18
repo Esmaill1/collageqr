@@ -1,0 +1,106 @@
+// DeskLore — Prisma schema
+// Mirrors PLAN.md §4 and PRD §5.2.
+// Run `npx prisma migrate dev --name init` once DATABASE_URL is set (Neon).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Desk {
+  id           String   @id // e.g., "B14"
+  zoneName     String   @map("zone_name")
+  totalMinutes Int      @default(0) @map("total_minutes")
+  level        Int      @default(1)
+  tagCounts    Json     @default("{}") @map("tag_counts")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  capsules      Capsule[]
+  focusSessions FocusSession[]
+  badgeVotes    BadgeVote[]
+
+  @@map("desks")
+}
+
+model Capsule {
+  id            String        @id @default(uuid())
+  deskId        String        @map("desk_id")
+  type          CapsuleType
+  authorAlias   String?       @map("author_alias")
+  textContent   String?       @map("text_content")
+  doodleData    String?       @map("doodle_data")
+  trackUrl      String?       @map("track_url")
+  trackMetadata Json?         @map("track_metadata")
+  isSealed      Boolean       @default(false) @map("is_sealed")
+  isOpened      Boolean       @default(false) @map("is_opened")
+  reportCount   Int           @default(0) @map("report_count")
+  status        CapsuleStatus @default(PUBLISHED)
+  deviceHash    String        @map("device_hash")
+  passParentId  String?       @map("pass_parent_id")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  desk         Desk      @relation(fields: [deskId], references: [id])
+  passParent   Capsule?  @relation("PassDoodleChain", fields: [passParentId], references: [id])
+  passChildren Capsule[] @relation("PassDoodleChain")
+  reports      Report[]
+
+  @@unique([passParentId])
+  @@index([passParentId])
+  @@index([deskId, status, createdAt])
+  @@map("capsules")
+}
+
+enum CapsuleType {
+  TEXT
+  DOODLE
+  CASSETTE
+  SEALED
+  PASS_DOODLE
+}
+
+enum CapsuleStatus {
+  PUBLISHED
+  HIDDEN
+  FLAGGED
+}
+
+model FocusSession {
+  id          String    @id @default(uuid())
+  deskId      String    @map("desk_id")
+  startedAt   DateTime  @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  tokenUsed   Boolean   @default(false) @map("token_used")
+
+  desk Desk @relation(fields: [deskId], references: [id])
+
+  @@index([completedAt])
+  @@map("focus_sessions")
+}
+
+model Report {
+  id         String   @id @default(uuid())
+  capsuleId  String   @map("capsule_id")
+  deviceHash String   @map("device_hash")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  capsule Capsule @relation(fields: [capsuleId], references: [id], onDelete: Cascade)
+
+  @@unique([capsuleId, deviceHash])
+  @@map("reports")
+}
+
+model BadgeVote {
+  id         String   @id @default(uuid())
+  deskId     String   @map("desk_id")
+  deviceHash String   @map("device_hash")
+  createdAt  DateTime @default(now()) @map("created_at")
+  desk       Desk     @relation(fields: [deskId], references: [id])
+
+  @@unique([deskId, deviceHash])
+  @@map("badge_votes")
+}
