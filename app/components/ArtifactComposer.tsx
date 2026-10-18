@@ -32,26 +32,26 @@ export interface ArtifactComposerProps {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  "invalid-request": "That song link doesn't look right — paste a full https:// URL.",
-  "invalid-token": "Your signing token expired. Finish another focus session.",
-  "session-not-found": "Session not found. Finish a new focus session.",
-  "session-not-completed": "Your focus session isn't complete yet.",
-  "token-used": "This signing token was already used — one mark per session.",
-  "empty-capsule": "Write a note or paste a song link first.",
-  "text-too-long": "Notes are limited to 160 characters.",
-  "doodle-too-large": "Doodle too large.",
-  "alias-too-long": "Alias is limited to 40 characters.",
+  "invalid-request": "لينك الأغنية ده شكله مش مظبوط — الصق لينك https:// كامل.",
+  "invalid-token": "توكن التوقيع بتاعك انتهى. خلّص جلسة تركيز تانية.",
+  "session-not-found": "مش لاقيين الجلسة. خلّص جلسة تركيز جديدة.",
+  "session-not-completed": "جلسة التركيز بتاعتك لسه مخلصتش.",
+  "token-used": "التوكن ده اتستخدم قبل كده — أثر واحد في كل جلسة.",
+  "empty-capsule": "اكتب ملاحظة أو الصق لينك الأغنية الأول.",
+  "text-too-long": "الملاحظة أطول من 160 حرف.",
+  "doodle-too-large": "الرسمة كبيرة أوي.",
+  "alias-too-long": "الاسم أطول من 40 حرف.",
   // Pass-the-Doodle continuation errors (Wave 6):
-  "already-continued": "Someone just finished this one — refresh.",
-  "parent-not-found": "That half-doodle is gone. Refresh and try again.",
+  "already-continued": "حد خلّصها دلوقتي — عيد تحميل الصفحة.",
+  "parent-not-found": "الرسمة اللي كان سيبها راحت. اعمل ريفرِش وحاول تاني.",
 };
 
 function friendlyType(type: string): string {
-  if (type === "DOODLE") return "doodle";
-  if (type === "CASSETTE") return "song";
-  if (type === "SEALED") return "sealed note for the next person";
-  if (type === "PASS_DOODLE") return "doodle";
-  return "note";
+  if (type === "DOODLE") return "رسمتك";
+  if (type === "CASSETTE") return "أغنيتك";
+  if (type === "SEALED") return "ملاحظتك المختومة للي بعدك";
+  if (type === "PASS_DOODLE") return "رسمتك";
+  return "ملاحظتك";
 }
 
 /**
@@ -130,7 +130,7 @@ export default function ArtifactComposer({
       const data = (await res.json().catch(() => null)) as ApiError | null;
       return (
         (data?.error && ERROR_MESSAGES[data.error]) ||
-        `Could not leave your mark (${res.status}). Try again.`
+        `مش قادرين نثبّت أثرك (${res.status}). حاول تاني.`
       );
     };
 
@@ -180,7 +180,7 @@ export default function ArtifactComposer({
       setPublished(data.capsule);
       onPublished(data.capsule);
     } catch {
-      setError("Network hiccup — your note didn't make it. Try again.");
+      setError("النت وقع — ملاحظتك مّوصلتش. حاول تاني.");
       setSubmitting(false);
     }
   };
@@ -191,19 +191,19 @@ export default function ArtifactComposer({
       <section className="border border-accent p-4" aria-live="polite">
         <p className="text-sm font-bold text-accent">
           {published.type === "SEALED"
-            ? "Your sealed note is waiting for the next person."
+            ? "ملاحظتك المختومة مستنّية اللي بعدك."
             : published.type === "PASS_DOODLE" && !passChild
-              ? "Your half is pinned — waiting for the next artist."
+              ? "نصّك اتثبّت — مترقّب اللي يكمّله بعدك."
               : published.type === "PASS_DOODLE" && passChild
-                ? "The doodle is complete! Two artists, one piece."
-                : `Pinned to Desk ${published.deskId}!`}
+                ? "الرسمة اكتملت! اتنين رسّاموا، لوحة واحدة."
+                : `اتثبّت على ترابيزة ${published.deskId}!`}
         </p>
         <p className="mt-1 text-xs opacity-70 text-ink">
           {published.type === "SEALED"
-            ? "It stays hidden until a visitor scans this desk."
+            ? "هتفضل مخبوحة لحد ما حد يلتقط كود الترابيزة دي."
             : published.type === "PASS_DOODLE" && !passChild
-              ? "The next person who scans draws the bottom half and your full doodle goes public."
-              : `Scroll up to see your ${friendlyType(published.type)} at the top of the corkboard.`}
+              ? "اللي هيلتقط الكود بعدك يرسم النص السفلي، وساعتها رسمتك الكاملة تظهر للكل."
+              : `طلع فوق وشوف ${friendlyType(published.type)} فوق في اللوح.`}
         </p>
       </section>
     );
@@ -225,25 +225,25 @@ export default function ArtifactComposer({
   );
 
   return (
-    <section className="border border-ink p-4" aria-label="Leave a mark">
+    <section className="border border-ink p-4" aria-label="سيب أثرك">
       <div className="flex items-center justify-between">
         <p className="text-sm font-bold text-ink">
-          Leave a mark on Desk {deskId}
+          سيب أثرك على ترابيزة {deskId}
         </p>
         <button
           type="button"
           onClick={onCancel}
           className="text-xs opacity-60 text-ink"
         >
-          Cancel
+          اغلق
         </button>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {tabButton("TEXT", "Text Note")}
-        {tabButton("DOODLE", "Pixel Doodle")}
-        {tabButton("SONG", "Song 🎵")}
-        {tabButton("PASS", "Pass-doodle ✏️")}
+        {tabButton("TEXT", "ملاحظة")}
+        {tabButton("DOODLE", "رسمة")}
+        {tabButton("SONG", "أغنية 🎵")}
+        {tabButton("PASS", "باص-الرسمة ✏️")}
       </div>
 
       {mode === "TEXT" ? (
@@ -254,11 +254,11 @@ export default function ArtifactComposer({
               onChange={(e) => setText(e.target.value)}
               maxLength={TEXT_MAX_CHARS}
               rows={4}
-              placeholder={sealed ? "What should ONLY the next person read?" : "What's it like sitting here? (max 160 chars)"}
+              placeholder={sealed ? "عايز بس اللي بعدك يقرأ إيه؟" : "الترابيزة دي شكلها إيه وانت قاعدة فيها؟ (لحد 160 حرف)"}
               className="w-full border border-ink bg-bg p-2 text-sm text-ink focus:border-accent focus:outline-none"
             />
             <p className="mt-1 text-[10px] opacity-60 text-ink">
-              {TEXT_MAX_CHARS - cleanedText.length} left — links are stripped automatically.
+              فاّضي {TEXT_MAX_CHARS - cleanedText.length} — اللينكات بتتمسح أوتوماتيك.
             </p>
           </div>
           <label className="mt-2 flex items-center gap-2 text-xs text-ink">
@@ -268,7 +268,7 @@ export default function ArtifactComposer({
               onChange={(e) => setSealed(e.target.checked)}
               className="accent-[var(--accent)]"
             />
-            ✉ For the next person only (sealed envelope)
+            ✉ للي بعدك بس (ظرف مختوم)
           </label>
         </>
       ) : mode === "DOODLE" ? (
@@ -279,12 +279,12 @@ export default function ArtifactComposer({
         <CassetteInput value={trackUrl} onChange={setTrackUrl} />
       ) : passLoading || !passChecked ? (
         <p className="mt-3 text-sm text-ink opacity-70" aria-live="polite">
-          Checking for a half-doodle waiting on this desk…
+          بندور على رسمة نصّية مستنّية على الترابيزة دي…
         </p>
       ) : passMode === "continue" && passPending ? (
         <div className="mt-3">
           <p className="text-sm font-bold text-accent">
-            Someone started a doodle here — finish it!
+            حد بدأ رسمة هنا — كمّلها!
           </p>
           <PassDoodleCanvas
             mode="continue"
@@ -295,20 +295,20 @@ export default function ArtifactComposer({
       ) : (
         <div className="mt-3">
           <p className="text-sm text-ink opacity-80">
-            Start a pass-doodle (draw the top half — the next person finishes it)
+            ابدأ باص-رسمة (ارسم النص اللي فوق — اللي بعدك يكمّله)
           </p>
           <PassDoodleCanvas mode="start" onChange={setPassTopHalf} />
         </div>
       )}
 
       <label className="mt-3 block text-xs opacity-70 text-ink">
-        Alias (optional)
+        الاسم (اختياري)
         <input
           type="text"
           value={alias}
           onChange={(e) => setAlias(e.target.value.slice(0, ALIAS_MAX_CHARS))}
           maxLength={ALIAS_MAX_CHARS}
-          placeholder="e.g. Tired Architecture Student"
+          placeholder="مثلاً: طالب عمارة مصدوم"
           className="mt-1 w-full border border-ink bg-bg p-2 text-sm text-ink focus:border-accent focus:outline-none"
         />
       </label>
@@ -330,14 +330,14 @@ export default function ArtifactComposer({
         }
       >
         {submitting
-          ? "Pinning..."
+          ? "بيثبّت…"
           : mode === "PASS" && passMode === "continue"
-            ? "Finish the Doodle"
+            ? "كمّل الرسمة"
             : mode === "PASS"
-              ? "Pin My Half"
+              ? "ثبّت نصّي"
               : sealed
-                ? "Seal it for the Next Person"
-                : "Pin to Desk"}
+                ? "ختمها للي بعدك"
+                : "ثبّت على الترابيزة"}
       </button>
 
       {/* P1 micro-reviews: badge ratings ride along with the token but never

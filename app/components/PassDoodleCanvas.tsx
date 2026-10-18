@@ -273,28 +273,28 @@ export default function PassDoodleCanvas({
 
   const drawHint =
     effectiveMode === "continue"
-      ? "Draw the bottom half — your marks meet theirs at the seam."
-      : "Draw the top half. The next person finishes the bottom — rough edges welcome.";
+      ? "ارسم النص السفلي — خطوطك هتتلاقى مع خطوطه عند الفاصل."
+      : "ارسم النص اللي فوق. اللي بعدك يكمّل اللي تحت — ولا يهمّك لو خطوطك مشظّرة.";
 
   return (
     <div>
       <div className="flex items-center gap-2">
-        <span className="text-xs text-ink opacity-70">Pen</span>
+        <span className="text-xs text-ink opacity-70">قلم</span>
         {toolButton("DRAW", "D")}
-        {toolButton("ERASER", "Erase")}
+        {toolButton("ERASER", "امسح")}
         <button
           type="button"
           onClick={clearHalf}
           className="ml-auto border border-ink px-2 py-1 text-xs opacity-70 text-ink"
         >
-          {effectiveMode === "continue" ? "Clear my half" : "Clear top"}
+          {effectiveMode === "continue" ? "امسح نصّي" : "امسح اللي فوق"}
         </button>
       </div>
 
       {effectiveMode === "continue" ? (
         <div className="mt-2">
           <p className="text-[10px] uppercase tracking-wide text-ink opacity-50">
-            Drawing from the last artist (locked)
+            رسمة اللي قبلك (مقفولة)
           </p>
           <canvas
             ref={previewCanvasRef}
@@ -307,7 +307,7 @@ export default function PassDoodleCanvas({
         </div>
       ) : (
         <p className="mt-2 text-[10px] uppercase tracking-wide text-ink opacity-50">
-          Your half of the canvas
+          نصّك في الكونفاس
         </p>
       )}
 

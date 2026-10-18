@@ -30,13 +30,11 @@ body {
   background-color: var(--bg);
   color: var(--ink);
   font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
+    Tahoma,
     "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
+    "Arabic Typesetting",
+    "Geeza Pro",
+    system-ui,
     sans-serif;
   background-image:
     linear-gradient(to right, var(--grid-line) 1px, transparent 1px),

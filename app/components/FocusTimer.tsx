@@ -164,15 +164,15 @@ export default function FocusTimer({
       setCanRetry(false);
       setErrorHint(
         data.error === "desk-not-found"
-          ? "This desk isn't registered yet. Try scanning the sticker again."
+          ? "الترابيزة دي لسه مسجّلة. جرّب تلتقط الستيكر تاني."
           : data.error === "missing-desk-id"
-            ? "Couldn't start — missing desk id."
-            : "Could not start the focus session. Please try again.",
+            ? "معرفتش تبدأ — ناقص رقم الترابيزة."
+            : "جلسة التركيز مقدرتش تبدأ. حاول تاني.",
       );
       updatePhase("error");
     } catch {
       setCanRetry(false);
-      setErrorHint("Could not reach the server. Check the connection and retry.");
+      setErrorHint("السيرفر مش واصل. شيك على النت وحاول تاني.");
       updatePhase("error");
     } finally {
       startingRef.current = false;
@@ -208,17 +208,17 @@ export default function FocusTimer({
         setCanRetry(false);
         setErrorHint(
           data.error === "session-too-short"
-            ? "Too fast. This desk only counts full 20-minute sessions. Pick another post up next time."
+            ? "مستعجل كده؟ الترابيزة دي بتحسب بس جلسات 20 دقيقة كاملة. المرة الجاية شوف بوست تاني."
             : data.error === "invalid-or-expired-token"
-              ? "Session record vanished — start a fresh 20-minute run to sign this desk."
-              : "Focus session could not be completed. Please try again.",
+              ? "سجل الجلسة اختفى — ابدأ جلسة 20 دقيقة جديدة عشان توقّع على الترابيزة دي."
+              : "جلسة التركيز مقدرتش تخلص. حاول تاني.",
         );
         updatePhase("error");
       } catch {
         completingRef.current = false;
         teardown();
         setCanRetry(true);
-        setErrorHint("Could not reach the server. Check the connection and retry.");
+        setErrorHint("السيرفر مش واصل. شيك على النت وحاول تاني.");
         updatePhase("error");
       }
     },
@@ -369,9 +369,9 @@ export default function FocusTimer({
   if (phase === "completed") {
     return (
       <div className="flex flex-col items-center gap-1 rounded-md border border-accent p-3">
-        <p className="text-sm font-bold text-accent">+20 XP to this desk.</p>
+        <p className="text-sm font-bold text-accent">+20 XP للترابيزة دي.</p>
         <p className="text-xs text-ink opacity-70">
-          You earned a signing token — valid for 15 minutes.
+          كسبت توكن توقيع — شغّال لمدة 15 دقيقة.
         </p>
       </div>
     );
@@ -391,7 +391,7 @@ export default function FocusTimer({
             }}
             className="rounded-md bg-accent px-4 py-2 text-sm font-bold text-[#f7f3ea]"
           >
-            Retry completion
+            حاول تاني تكمل
           </button>
         ) : (
           <button
@@ -399,7 +399,7 @@ export default function FocusTimer({
             onClick={giveUp}
             className="rounded-md border border-ink px-4 py-2 text-sm text-ink"
           >
-            Back
+            ارجع
           </button>
         )}
       </div>
@@ -410,7 +410,7 @@ export default function FocusTimer({
     return (
       <div className="flex flex-col items-center gap-3 rounded-md border border-ink p-3">
         <p className="text-xs text-ink opacity-70">
-          Timer paused — return to the tab to keep the streak.
+          المؤقت وقف… ارجع للتبويبة عشان تكمل.
         </p>
         <span className="text-3xl font-semibold tabular-nums text-ink opacity-40">
           {clock}
@@ -420,7 +420,7 @@ export default function FocusTimer({
           onClick={giveUp}
           className="text-xs text-ink opacity-50 underline"
         >
-          Give up
+          سيبها
         </button>
       </div>
     );
@@ -430,17 +430,17 @@ export default function FocusTimer({
     return (
       <div className="flex flex-col items-center gap-3 rounded-md border border-ink p-3">
         <p className="text-sm font-bold text-ink">
-          Complete 20 mins of focus to sign Desk {deskId}.
+          خلّص 20 دقيقة عشان توقّع على ترابيزة {deskId}.
         </p>
         <button
           type="button"
           onClick={() => void start()}
           className="rounded-md bg-accent px-4 py-2 text-sm font-bold text-[#f7f3ea]"
         >
-          Start Session
+          ابدأ الجلسة
         </button>
         <p className="text-xs text-ink opacity-60">
-          Stay on this tab. The timer pauses if you leave.
+          اعمل ردك على التبويبة دي. المؤقت بيقف لو خرجت.
         </p>
       </div>
     );
@@ -456,15 +456,15 @@ export default function FocusTimer({
       </span>
       <p className="text-xs text-ink opacity-60">
         {phase === "left" && graceLeftMs !== null
-          ? `Grace ${Math.ceil(graceLeftMs / 1000)}s…`
-          : "Leave this tab to pause the timer."}
+          ? `سماح ${Math.ceil(graceLeftMs / 1000)} ثانية…`
+          : "سيب التبويبة ده عشان المؤقت يقف."}
       </p>
       <button
         type="button"
         onClick={giveUp}
         className="text-xs text-ink opacity-50 underline"
       >
-        Give up
+        سيبها
       </button>
     </div>
   );

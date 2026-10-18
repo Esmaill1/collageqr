@@ -1,19 +1,10 @@
 import { levelLabel } from "@/lib/desk";
-
-const TAG_LABELS: Record<string, string> = {
-  outlet: "⚡ Working Outlet",
-  cold_ac: "🥶 Freezing AC",
-  sunny: "☀️ Good Natural Light",
-  squeaky: "🪑 Squeaky Chair",
-  wobbly: "↕️ Wobbly Leg",
-  quiet: "🤫 Dead Quiet",
-};
+import { badgeLabel, badgeEmoji } from "@/lib/badges";
 
 function friendlyTagLabel(key: string): string {
-  if (TAG_LABELS[key]) return TAG_LABELS[key];
-  return key
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  const emoji = badgeEmoji(key);
+  const label = badgeLabel(key);
+  return emoji ? `${emoji} ${label}` : label;
 }
 
 function topTags(tagCounts: unknown): { key: string; count: number }[] {
@@ -46,15 +37,15 @@ export default function DeskHeader({
       className="mb-5 rounded-lg border p-4"
       style={{ borderColor: "var(--grid-line)" }}
     >
-      <h1 className="text-2xl font-bold text-ink">Desk {desk.id}</h1>
+      <h1 className="text-2xl font-bold text-ink">ترابيزة {desk.id}</h1>
       <p className="mt-1 text-sm text-ink opacity-70">{desk.zoneName}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink">
-        <span title={`Level ${desk.level}`}>
-          <span className="font-semibold text-accent">Lvl {desk.level}</span>{" "}
+        <span title={`المستوى ${desk.level}`}>
+          <span className="font-semibold text-accent">مستوى {desk.level}</span>{" "}
           {levelLabel(desk.level)}
         </span>
-        <span className="opacity-70">{hours} hrs logged</span>
+        <span className="opacity-70">{hours} ساعة مسجّلة</span>
       </div>
 
       {tags.length > 0 && (
@@ -64,7 +55,7 @@ export default function DeskHeader({
               key={tag.key}
               className="rounded-full border px-2.5 py-1 text-xs text-ink"
               style={{ borderColor: "var(--grid-line)" }}
-              title={`${tag.count} vault${tag.count === 1 ? "" : "s"}`}
+              title={`${tag.count} تقييم`}
             >
               {friendlyTagLabel(tag.key)}
             </li>

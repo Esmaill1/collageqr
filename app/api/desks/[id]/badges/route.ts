@@ -3,17 +3,9 @@ import { Prisma } from "@prisma/client";
 import { verifySession } from "@/lib/jwt";
 import { prisma } from "@/lib/db";
 import { applyDeviceCookie, getDeviceContext } from "@/lib/device";
+import { BADGE_KEYS } from "@/lib/badges";
 
 export const dynamic = "force-dynamic";
-
-const CANONICAL_BADGES = new Set([
-  "outlet",
-  "cold_ac",
-  "sunny",
-  "squeaky",
-  "wobbly",
-  "quiet",
-]);
 
 const MAX_BADGES = 2;
 
@@ -66,7 +58,7 @@ export async function POST(
     !Array.isArray(badges) ||
     badges.length === 0 ||
     badges.length > MAX_BADGES ||
-    !badges.every((b) => typeof b === "string" && CANONICAL_BADGES.has(b))
+    !badges.every((b) => typeof b === "string" && BADGE_KEYS.includes(b))
   ) {
     return res({ error: "invalid-badges" }, 400);
   }

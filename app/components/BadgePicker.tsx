@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BADGES } from "@/lib/badges";
 
 /**
  * Physical Spot Micro-Reviews (PRD §3.1 P1): after a focus session
@@ -8,15 +9,6 @@ import { useState } from "react";
  * attribute badges. Badges do NOT consume the capsule signing token —
  * the server verifies it separately via lib/jwt (tokenUsed untouched).
  */
-
-export const BADGES: { key: string; label: string }[] = [
-  { key: "outlet", label: "⚡ Working Outlet" },
-  { key: "cold_ac", label: "🥶 Freezing AC" },
-  { key: "sunny", label: "☀️ Good Natural Light" },
-  { key: "squeaky", label: "🪑 Squeaky Chair" },
-  { key: "wobbly", label: "↕️ Wobbly Leg" },
-  { key: "quiet", label: "🤫 Dead Quiet" },
-];
 
 const MAX_BADGES = 2;
 
@@ -58,16 +50,16 @@ export default function BadgePicker({
           | null;
         setError(
           data?.error === "invalid-token"
-            ? "Your signing token expired — finish another focus session."
+            ? "التوكن بتاعك خلص — اعمل سيشن فوكس تانية عشان تقيّم."
             : data?.error === "already-voted"
-              ? "You already rated this desk."
-              : `Couldn't save your ratings (${res.status}). Try again.`,
+              ? "أنت قيّمت الترابيزة دي قبل كده."
+              : `معرفناش نحفظ تقييمك (${res.status}). جرّب تاني.`,
         );
         return;
       }
       setVoted(true);
     } catch {
-      setError("Network hiccup — ratings didn't save. Try again.");
+      setError("حصل لخبطة في الشبكة — التقييم مش اتحفظ. جرّب تاني.");
     } finally {
       setSubmitting(false);
     }
@@ -78,10 +70,10 @@ export default function BadgePicker({
       <aside
         className="mt-3 border-dashed p-3 text-center"
         style={{ border: "1px dashed var(--grid-line)" }}
-        aria-label="Desk ratings"
+        aria-label="تقييمات الترابيزة"
       >
         <p className="text-xs text-ink opacity-70">
-          ⭐Thanks — your desk ratings are on the header board.
+          ⭐شكرًا — تقييمك بقى ظاهر فوق في الهيدر.
         </p>
       </aside>
     );
@@ -91,10 +83,10 @@ export default function BadgePicker({
     <aside
       className="mt-3 p-3"
       style={{ border: "1px dashed var(--grid-line)" }}
-      aria-label="Rate this desk"
+      aria-label="قيّم الترابيزة دي"
     >
       <p className="text-xs font-semibold text-ink">
-        Rate this spot <span className="font-normal opacity-60">(pick up to 2)</span>
+        قيّم المكان ده <span className="font-normal opacity-60">(اختر كحد أقصى وصفين)</span>
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
         {BADGES.map((badge) => {
@@ -114,7 +106,7 @@ export default function BadgePicker({
                 isOn ? undefined : { borderColor: "var(--grid-line)" }
               }
             >
-              {badge.label}
+              {badge.emoji} {badge.label}
             </button>
           );
         })}
@@ -134,7 +126,7 @@ export default function BadgePicker({
             : "mt-2 w-full border border-ink p-2 text-xs opacity-40 text-ink"
         }
       >
-        {submitting ? "Saving..." : "Save ratings"}
+        {submitting ? "بيتسجّل..." : "احفظ التقييم"}
       </button>
     </aside>
   );

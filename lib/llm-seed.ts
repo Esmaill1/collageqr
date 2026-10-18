@@ -10,52 +10,66 @@ const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 function buildPrompt(count: number): string {
-  return `Write ${count} short notes that a previous student might leave on a university library desk time-capsule app.
+  return `اكتب ${count} ملاحظة قصيرة (أقل من 160 حرف) باللهجة المصرية الجامعية، حكاي عن ملاحظة طالب تركها على ترابيزة في مكتبة الجامعة في تطبيق كبسولات الحكايات (DeskLore).
 
-Rules for each note:
-- Maximum 160 characters. Plain text only.
-- No URLs, no phone numbers, no social media handles, no real names.
-- No profanity.
-- Mix of encouraging, gently funny, and atmospheric (e.g. "The AC here is criminal", "Good natural light at 4pm").
-- Each note has a short playful author alias (e.g. "Frozen Senior", "Quiet Friend", "Sleepy Freshman"). Max 40 characters.
+قواعد كل ملاحظة:
+- 160 حرف على الأكثر. نص عادي بس.
+- ممنوع روابط، أرقام تليفون، حسابات سوشيال، أو أسماء حقيقية لمحاضرين أو زمايل.
+- ممنوع أي كلام بذيء أو فظ.
+- مزيج من: تشجيع حلوة، كوميديا خفيفة، ووصف لأجواء المكتبة (مثلاً "التكييف هنا بيجمّد"، "ضوء الشمس الساعة 4 هنا حلو جدًا").
+- كل ملاحظة معاها اسم مستعار قصير ومهضوم لصاحبها (مثلاً "شبح الرسالة"، "كبير جامدة"، "نائم سنة أولى"). أقصى 40 حرف.
 
-Return STRICT JSON only: an array of exactly ${count} objects like {"text": "...", "alias": "..."}. No markdown fences, no commentary.`;
+رجّع JSON صارم وبس: مصفوفة فيها بالظبط ${count} كائن على الشكل {"text": "...", "alias": "..."}. من غير علامات ماركداون ومن غير أي كلام زيادة.`;
 }
 
 const SAFETY_PROMPT =
-  "You generate wholesome, friendly seed content for a student study app. Output only the requested strict JSON array. Keep every note <=160 characters, plain text, no URLs, no profanity, no real names.";
+  "أنت بتولّد محتوى لطيف وودود لتطبيق مذاكرة لطلبة جامعة. رجّع بس مصفوفة JSON الصارمة اللي اتطلبت. كل ملاحظة أقصى 160 حرف وباللهجة المصرية الجامعية، نص عادي، بدون روابط، بدون كلام بذيء، وبدون أسماء حقيقية.";
 
 const FALLBACK_POOL: SeedNote[] = [
-  { text: "You got this. One paragraph at a time.", alias: "Anonymous" },
-  { text: "The AC here is criminal. Bring a hoodie.", alias: "Frozen Senior" },
-  { text: "Best desk on this floor. Don't tell anyone.", alias: "Keeper of B14" },
-  { text: "If you're reading this, take a breath. You're doing fine.", alias: "Quiet Friend" },
-  { text: "Someone once cried at this desk and still passed. You will too.", alias: "Legend of the Desk" },
-  { text: "4pm sunlight on this desk is unreal. Schedule accordingly.", alias: "Sun Chaser" },
-  { text: "I finished my thesis abstract here. Your turn for greatness.", alias: "Thesis Ghost" },
-  { text: "Left leg wobbles. Consider it a tiny focus challenge.", alias: "Wobbly Desk Enjoyer" },
-  { text: "The outlet under this desk changed my life. Pass it on.", alias: "Charged & Grateful" },
-  { text: "Midterms survivors of this desk unite. We made it, you will too.", alias: "Survivor '26" },
-  { text: "Pro tip: eyes off the phone, coffee in hand, ten deep breaths. Go.", alias: "Kind Stranger" },
-  { text: "This desk has heard more sighs than a therapy office. Keep going.", alias: "Fellow Sigher" },
-  { text: "I left one pomodoro here. It's yours. Spend it wisely.", alias: "Pomodoro Benefactor" },
-  { text: "The person before you believes in you. They just didn't say it out loud.", alias: "Believer" },
-  { text: "Studied here through a heartbreak. This desk is stronger than it looks. So are you.", alias: "Resilient Romantic" },
-  { text: "Great natural light. Books look 30% more interesting here.", alias: "Golden Hour Studier" },
-  { text: "Somewhere a deadline is scared of you right now.", alias: "Deadline Menace" },
-  { text: "Welcome. Same chair, new chapter. Make it count.", alias: "The Predecessor" },
-  { text: "I lost my pen here. If you find it, it's yours. Good luck energy included.", alias: "Pen Philanthropist" },
-  { text: "This desk raised three GPAs. Add yours to the family.", alias: "GPA Godparent" },
-  { text: "Saw a pigeon judge me through this window. Do better than me.", alias: "Pigeon Witness" },
-  { text: "Focus for twenty minutes. Future you says thanks in advance.", alias: "Future You" },
-  { text: "This desk hums with the ghosts of all-nighters. Respectful ghosts. They help.", alias: "Ghost Liaison" },
-  { text: "If stuck, write one ugly sentence. Ugly sentences become good essays.", alias: "Ugly Sentence Coach" },
-  { text: "The vending machine on this floor eats coins. Bring exact change and courage.", alias: "Vending Machine Veteran" },
-  { text: "Quiet zone. Let your brain be the loudest thing here.", alias: "Silence Admirer" },
-  { text: "Chapter five hates everyone. Don't take it personally.", alias: "Ch 5 Survivor" },
-  { text: "Sat here with a fever and a deadline. The desk absorbed some of it for me.", alias: "Fever Dream Graduate" },
-  { text: "Little scribble in the wood grain looks like a cat. That's your study buddy now.", alias: "Wood Cat Finder" },
-  { text: "By the time you read this, my exam is over. One of us is free.", alias: "Escaped Student" },
+  { text: "نوّرت يا صاحبي. خدها فقرة فقرة وهتخلص بإذن الله.", alias: "مجهول" },
+  { text: "التكييف هنا بيجمّد. هات بلوظ.", alias: "كبير جامدة" },
+  { text: "أحسن ترابيزة في الدور ده. متقولش لحد.", alias: "حارس B14" },
+  { text: "لو بتقرا الكلام ده، خد نفس عميق. إنت ماشي تمام يا بطل.", alias: "واحد هادي" },
+  { text: "في حد بكى هنا قبل كده وكمان عدّى. إنت برضو هتعدي.", alias: "أسطورة الترابيزة" },
+  { text: "شمس الساعة 4 على الترابيزة دي حاجة تانية خالص. ظبّط بريكك عليها.", alias: "صائد الشمس" },
+  { text: "خلّصت ملخّص الرسالة هنا. دورك دلوقتي تعمل حاجة عظيمة.", alias: "شبح الرسالة" },
+  { text: "رِجل الترابيزة بتهتز شوية. اعتبرها تحدي تركيز صغيرون.", alias: "محترف الترابيزة الهزّوتة" },
+  { text: "الفيشة تحت الترابيزة دي غيّرت حياتي. لو لقيتها، سيبها لغيرك زي ما سيبوها ليك.", alias: "مشحون ومشكور" },
+  { text: "ناجين نصفي الترم قعدوا على الترابيزة دي. إحنا خلصنا، وإنت كمان هتخلص.", alias: "الناجي دفعة '26" },
+  { text: "خد نصيحة: شيل الموبايل بعيد، خد القهوة في إيدك، وعِش عشر تنفّسات عميق. يلا يا معلم.", alias: "غريب مؤدب" },
+  { text: "الترابيزة دي سمعت تنهات أكتر من مكتب دكتور نفسي. كمّل يا صاحبي.", alias: "زميل التنهات" },
+  { text: "سيبتلك بومودورو واحد هنا. ده بتاعك. صرّفه صح.", alias: "مورد التركيز" },
+  { text: "اللي قعد قبلك مُؤمن فيك. بس ما قالهاش بصوت عالي.", alias: "المؤمن الصامت" },
+  { text: "ذاكرت هنا وأنا بقلب مكسور. الترابيزة دي أقوى من شكلها، وإنت كمان أقوى من شكلك.", alias: "عاشق مثابر" },
+  { text: "ضوء طبيعي جميل هنا. الكتب بتبقى 30% أكتر حلوة من نور الشمس.", alias: "طالب الوقت الذهبي" },
+  { text: "في مكان ما، فيه ديدلاين بيخاف منك دلوقتي.", alias: "شبح الديدلاين" },
+  { text: "أهلًا بيك. نفس الكرسي، فصل جديد. خليها تعدّ حلوة.", alias: "اللي قبلك" },
+  { text: "ضاع قلمي هنا. لو لقيته، ده بتاعك ومعاه شوية حظ فكة.", alias: "مُتبرّع القلم" },
+  { text: "الترابيزة دي طلّعت 3 معدلات كويسة. ضيف معدلك للعيلة.", alias: "أبو معدلات" },
+  { text: "حمامة بصّت لي من الشباك ده وحكمت عليّا. اعمل أحسن مني يا صاحبي.", alias: "شاهد الحمام" },
+  { text: "ركز عشرين دقيقة. إنت المستقبلي هيشكرك مقدمًا.", alias: "أنت (بعدين)" },
+  { text: "الترابيزة دي بتهمس مع أرواح اللي سهرت عليها. أرواح مهذبة وبتساعد.", alias: "وسيط الأرواح" },
+  { text: "لو وقفت ماتعرفش تكتب إيه، اكتب جملة شكلها وحش. الجمل الوحشة بتبقى مقالات حلوة في الآخر.", alias: "مدرب الجمل الوحشة" },
+  { text: "المكينة في الدور ده بتبلع فلوس. جهّز فلوس مضبوطة وشوية جرأة.", alias: "جندي المكينة" },
+  { text: "منطقة هدوء. سيب دماغك هو الأعلى صوت هنا.", alias: "محب السكوت" },
+  { text: "الفصل الخامس بيكره كل الناس. ماتاخدهاش عليك شخصيًا.", alias: "ناجي الفصل الخامس" },
+  { text: "قعدت هنا وناري عالي وديدلاين بيلحقني. الترابيزة شالت مني شوية من الوجع.", alias: "خريج الحمّى" },
+  { text: "في خربشة صغيرة في خشب الترابيزة شبه قطّة. دي بقى صاحبتك في المذاكرة.", alias: "مكتشف قطة الخشب" },
+  { text: "لما توصل الكلام ده، امتحاني يكون خلص خلاص. واحد منا الاتنين حر دلوقتي.", alias: "الطالب الهارب" },
+];
+
+// Sealed-envelope messages (English originals live in scripts/seed.ts, which is
+// outside this file's edit scope; the translated pool is exported here so the
+// seed script can switch to it in a later wave).
+export const SEALED_POOL: string[] = [
+  "افتحني بس لو كنت اللي هيقعد هنا بعدي. — اللي قبلك",
+  "شِش — في فيشة كويسة تحت الترابيزة دي. سلّمها للي بعدك.",
+  "سر صغير: مكينة البيع في الدور ده بتقبل حتى العملات الحزينة.",
+  "الترابيزة دي استضافت سهر ليلة كاملة خلص بامتحان عدّى. شوية حظ ساكن في خشبها.",
+  "لو النهاردة تقيل عليك، خبّي السر لحد قهوتك التانية. افتح بعدها.",
+  "محجوز للروح الشجاعة الجاية. جوّاها: كلمة تشجيع مش رسمية أبدًا.",
+  "تحذير: المحتويات ممكن تعمل إحساس مايتحكمش فيه بإنك 'هتقدر'.",
+  "سيبت حاجة للي كان محتاجها أكتر. يا رب دي تكون انت.",
 ];
 
 // Deterministic-enough shuffle for seed variety.

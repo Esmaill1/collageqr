@@ -176,16 +176,16 @@ export default function PixelCanvas({ onChange }: PixelCanvasProps) {
   return (
     <div>
       <div className="flex items-center gap-2">
-        <span className="text-xs text-ink opacity-70">Pen</span>
+        <span className="text-xs text-ink opacity-70">قلم</span>
         {toolButton("S", "S")}
         {toolButton("M", "M")}
-        {toolButton("ERASER", "Erase")}
+        {toolButton("ERASER", "امسح")}
         <button
           type="button"
           onClick={clearGrid}
           className="ml-auto border border-ink px-2 py-1 text-xs opacity-70 text-ink"
         >
-          Clear all
+          امسح كله
         </button>
       </div>
       <canvas
@@ -200,7 +200,7 @@ export default function PixelCanvas({ onChange }: PixelCanvasProps) {
         style={{ aspectRatio: "2 / 1", imageRendering: "pixelated" }}
       />
       <p className="mt-1 text-[10px] text-ink opacity-60">
-        128 × 64 one-bit canvas — draw a little something for the next person.
+        كونفاس 128×64 أبيض وأسود — ارسم حاجة صغيرة للي بعدك.
       </p>
     </div>
   );

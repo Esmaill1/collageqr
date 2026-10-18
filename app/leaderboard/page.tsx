@@ -15,10 +15,10 @@ export default async function LeaderboardPage() {
     <main className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pb-16 pt-6">
       <header className="mb-5">
         <h1 className="text-2xl font-bold text-ink">
-          🏆 Library Leaderboard
+          🏆 ترتيب الترابيزات
         </h1>
         <p className="mt-1 text-sm text-ink opacity-70">
-          Top 10 desks by focus minutes this week.
+          أكتر 10 ترابيزات نشاط بدقايق التركيز ده الأسبوع.
         </p>
       </header>
 
@@ -27,7 +27,7 @@ export default async function LeaderboardPage() {
           className="rounded-lg border p-6 text-center text-sm text-ink opacity-70"
           style={{ borderColor: "var(--grid-line)" }}
         >
-          No desks registered yet. Be the first to scan one.
+          مفيش ترابيزات متسجلة لسه. خُدها عليك وامسح أول واحدة.
         </section>
       ) : (
         <ol className="flex flex-col gap-3">
@@ -48,9 +48,9 @@ export default async function LeaderboardPage() {
               </span>
               <div className="flex-1">
                 <p className="text-sm font-bold text-ink">
-                  Desk {desk.id}
+                  ترابيزة {desk.id}
                   <span className="ml-2 text-xs font-normal text-ink opacity-60">
-                    Lvl {desk.level} · {desk.levelLabel}
+                    مستوى {desk.level} · {desk.levelLabel}
                   </span>
                 </p>
                 <p className="mt-0.5 text-xs text-ink opacity-60">
@@ -59,10 +59,10 @@ export default async function LeaderboardPage() {
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-accent">
-                  {desk.weeklyMinutes} min
+                  {desk.weeklyMinutes} دقيقة
                 </p>
                 <p className="text-[10px] text-ink opacity-50">
-                  this week · {desk.totalMinutes} total
+                  ده الأسبوع · {desk.totalMinutes} إجمالي
                 </p>
               </div>
             </li>
@@ -75,7 +75,7 @@ export default async function LeaderboardPage() {
           href="/"
           className="text-xs text-ink underline opacity-70 hover:opacity-100"
         >
-          ← Scan your desk to log focus time
+          ← امسح ترابيزتك عشان تسجل وقت التركيز
         </Link>
       </footer>
     </main>

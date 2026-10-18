@@ -41,18 +41,18 @@ export default async function DeskPage({
         >
           <span className="text-4xl">📌</span>
           <h1 className="mt-4 text-xl font-bold text-ink">
-            {deskId ? "Desk not found" : "Scan a desk QR code"}
+            {deskId ? "الترابيزة دي مش موجودة" : "امسح QR ترابيزة"}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-ink opacity-70">
             {deskId
-              ? "This desk doesn't exist yet. Check the sticker on your desk and try scanning again."
-              : "Find the DeskLore sticker on a library desk, scan its QR code, and open this desk's corkboard."}
+              ? "الترابيزة دي لسه متسجلةش. اتأكد من الاستيكر على ترابيزتك وامسح تاني."
+              : "دوّر على استيكر DeskLore على ترابيزة في المكتبة، امسح الـ QR، وافتح حيطة الترابيزة دي."}
           </p>
           <Link
             href="/leaderboard"
             className="mt-4 inline-block text-xs text-ink underline opacity-70"
           >
-            🏆 See the library leaderboard
+            🏆 ترتيب الترابيزات
           </Link>
         </div>
       </main>
@@ -73,7 +73,7 @@ export default async function DeskPage({
           href="/leaderboard"
           className="text-xs text-ink underline opacity-60"
         >
-          🏆 Library Leaderboard — top desks this week
+          🏆 ترتيب الترابيزات — أكثر الترابيزات نشاط ده الأسبوع
         </Link>
       </footer>
 

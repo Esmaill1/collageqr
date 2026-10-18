@@ -22,7 +22,7 @@ export default function CassetteInput({
   return (
     <div className="mt-3">
       <label className="block text-xs font-semibold text-ink" htmlFor="track-url">
-        🎵 Drop a song for the next person at this desk
+        🎵 الطلب أغنية للي بعدك على الترابيزة دي
       </label>
       <input
         id="track-url"
@@ -31,7 +31,7 @@ export default function CassetteInput({
         autoComplete="off"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Paste a Spotify / YouTube / SoundCloud link"
+        placeholder="الصق لينك أغنية (Spotify / YouTube / SoundCloud / Anghami)"
         className="mt-1 w-full border border-ink bg-bg p-2 text-sm text-ink break-all focus:border-accent focus:outline-none"
         aria-describedby="track-url-hint"
       />
@@ -39,8 +39,8 @@ export default function CassetteInput({
         {value.trim().length === 0
           ? SUPPORTED
           : looksValid
-            ? "Song title + artist are pulled in automatically when you pin."
-            : "That doesn't look like a link — paste the full https:// URL."}
+            ? "اسم الأغنية والمغني هيتجيبوا أتوماتيك لما تثبّت."
+            : "ده شكله مش لينك — الصق لينك https:// كامل."}
       </p>
     </div>
   );

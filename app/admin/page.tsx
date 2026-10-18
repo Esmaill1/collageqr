@@ -32,8 +32,28 @@ function snippet(c: AdminCapsule): string {
       ? `${c.textContent.slice(0, 80)}…`
       : c.textContent;
   }
-  if (c.doodleData) return "[pixel doodle]";
-  return c.trackUrl ? "[cassette track]" : "[no content]";
+  if (c.doodleData) return "[رسمة بكسل]";
+  return c.trackUrl ? "[كاسيت أغنية]" : "[مفيش محتوى]";
+}
+
+const typeLabels: Record<string, string> = {
+  note: "ملحوظة",
+  sticker: "استيكر",
+};
+
+const statusLabels: Record<string, string> = {
+  hidden: "مخفي",
+  flagged: "مبلّغ",
+  published: "منشور",
+  sealed: "مختوم",
+};
+
+function typeLabel(type: string): string {
+  return typeLabels[type] ?? type;
+}
+
+function statusLabel(status: string): string {
+  return statusLabels[status] ?? status;
 }
 
 export default function AdminPage() {
@@ -52,11 +72,11 @@ export default function AdminPage() {
       if (res.status === 401) {
         setToken(null);
         setCapsules(null);
-        setError("Wrong password");
+        setError("كلمة سر غلط");
         return false;
       }
       if (!res.ok) {
-        setError(`Admin API error (${res.status})`);
+        setError(`مشكلة في API الأدمن (${res.status})`);
         return false;
       }
       const data = (await res.json()) as { capsules?: AdminCapsule[] };
@@ -64,7 +84,7 @@ export default function AdminPage() {
       setError(null);
       return true;
     } catch {
-      setError("Network error");
+      setError("مشكلة في الاتصال");
       return false;
     } finally {
       setBusy(false);
@@ -107,13 +127,13 @@ export default function AdminPage() {
       if (res.status === 401) {
         setToken(null);
         setCapsules(null);
-        setError("Wrong password");
+        setError("كلمة سر غلط");
         return;
       }
       // Refetch regardless so the table always mirrors the DB.
       await load(token);
     } catch {
-      setError("Network error");
+      setError("مشكلة في الاتصال");
       setBusy(false);
     }
   }
@@ -123,16 +143,16 @@ export default function AdminPage() {
       <main
         className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4"
       >
-        <h1 className="mb-1 text-lg font-semibold text-ink">DeskLore Admin</h1>
+        <h1 className="mb-1 text-lg font-semibold text-ink">لوحة تحكم الإشراف</h1>
         <p className="mb-6 text-xs text-ink opacity-60">
-          Review hidden &amp; flagged capsules.
+          مراجعة الكبسولات المخفية والمبلّغ عنها.
         </p>
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
             type="password"
             value={tokenInput}
             onChange={(e) => setTokenInput(e.target.value)}
-            placeholder="Admin token"
+            placeholder="كلمة سر الأدمن"
             className="w-full rounded border bg-transparent px-3 py-2 text-sm text-ink"
             style={{ borderColor: "var(--grid-line)" }}
             autoComplete="off"
@@ -146,13 +166,13 @@ export default function AdminPage() {
             className="w-full rounded px-3 py-2 text-sm font-semibold text-bg"
             style={{ backgroundColor: "var(--ink)" }}
           >
-            {busy ? "Checking…" : "Sign in"}
+            {busy ? "بنشيك…" : "ادخل"}
           </button>
           <Link
             href="/"
             className="block text-center text-xs text-ink opacity-60 hover:opacity-90"
           >
-            ← Back to the desks
+            ← ارجع للترابيزات
           </Link>
         </form>
       </main>
@@ -164,16 +184,16 @@ export default function AdminPage() {
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-lg font-semibold text-ink">DeskLore Admin</h1>
+        <h1 className="text-lg font-semibold text-ink">لوحة تحكم الإشراف</h1>
         <div className="flex items-center gap-4">
           <span className="text-xs text-ink opacity-60">
-            Hidden / flagged: <strong>{count}</strong>
+            مخفي / مبلّغ: <strong>{count}</strong>
           </span>
           <Link
             href="/"
             className="text-xs text-ink opacity-60 hover:opacity-90"
           >
-            ← Back to the desks
+            ← ارجع للترابيزات
           </Link>
         </div>
       </div>
@@ -183,10 +203,10 @@ export default function AdminPage() {
       )}
 
       {capsules === null ? (
-        <p className="text-sm text-ink opacity-60">Loading…</p>
+        <p className="text-sm text-ink opacity-60">بيحمّل…</p>
       ) : count === 0 ? (
         <p className="text-sm text-ink opacity-60">
-          Nothing to review — no hidden or flagged capsules.
+          مفيش حاجة للمراجعة — مفيش كبسولات مخفية أو مبلّغ عنها.
         </p>
       ) : (
         <ul className="space-y-3">
@@ -209,8 +229,9 @@ export default function AdminPage() {
                   </p>
                 </div>
                 <p className="text-xs uppercase tracking-wide text-ink opacity-50">
-                  {c.type} · {c.status} · reports {c.reportCount} ·{" "}
-                  {new Date(c.createdAt).toLocaleDateString()} · desk{" "}
+                  {typeLabel(c.type)} · {statusLabel(c.status)} · بلاغات{" "}
+                  {c.reportCount} ·{" "}
+                  {new Date(c.createdAt).toLocaleDateString()} · ترابيزة{" "}
                   {c.deskId}
                   {c.authorAlias ? ` · — ${c.authorAlias}` : ""}
                 </p>
@@ -236,7 +257,7 @@ export default function AdminPage() {
                   className="rounded px-3 py-1.5 text-xs font-semibold text-ink"
                   style={{ border: "1px solid var(--grid-line)" }}
                 >
-                  Restore
+                  استرجع
                 </button>
                 <button
                   type="button"
@@ -245,7 +266,7 @@ export default function AdminPage() {
                   className="rounded px-3 py-1.5 text-xs font-semibold text-accent"
                   style={{ border: "1px solid var(--grid-line)" }}
                 >
-                  Delete
+                  امسح
                 </button>
               </div>
             </li>
@@ -257,5 +278,5 @@ export default function AdminPage() {
 }
 
 function snapshotLabel(c: AdminCapsule): string {
-  return c.authorAlias ? `Note by ${c.authorAlias}` : "Anonymous note";
+  return c.authorAlias ? `ملحوظة من ${c.authorAlias}` : "ملحوظة مجهولة";
 }

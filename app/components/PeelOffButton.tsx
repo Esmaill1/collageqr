@@ -72,13 +72,13 @@ export default function PeelOffButton({
 
   let label: string;
   if (state.kind === "already-reported") {
-    label = "Already reported";
+    label = "اتبلغت قبل كده";
   } else if (state.kind === "reported") {
-    label = `Reported (${state.count}/3)`;
+    label = `اتبلغ (${state.count}/3)`;
   } else if (busy) {
     label = "…";
   } else {
-    label = "✕ Peel off";
+    label = "✕ شيل";
   }
 
   return (
@@ -86,7 +86,7 @@ export default function PeelOffButton({
       type="button"
       onClick={handleClick}
       disabled={busy || done}
-      title="Report this note to the desk moderators"
+      title="بلّغ عن الورقة دي للمشرفين"
       className="text-[10px] uppercase tracking-wide text-ink opacity-35 transition-opacity hover:opacity-70 disabled:cursor-not-allowed"
     >
       {label}

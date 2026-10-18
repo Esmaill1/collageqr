@@ -24,13 +24,13 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
       setError(null);
       try {
         const res = await fetch(`/api/stickers?desks=${encodeURIComponent(activeDesks.join(","))}`);
-        if (!res.ok) throw new Error(`Failed to generate stickers (HTTP ${res.status})`);
+        if (!res.ok) throw new Error(`فشل توليد الاستيكرات (HTTP ${res.status})`);
         const data: Sticker[] = await res.json();
         if (!cancelled) setStickers(data);
       } catch (err) {
         if (!cancelled) {
           setStickers([]);
-          setError(err instanceof Error ? err.message : "Failed to generate stickers.");
+          setError(err instanceof Error ? err.message : "فشل توليد الاستيكرات.");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -44,7 +44,7 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
   return (
     <section className="not-print w-full max-w-3xl">
       <label htmlFor="desk-list" className="mb-2 block text-sm font-medium" style={{ color: "var(--ink)" }}>
-        Desk IDs (comma, space, or newline separated)
+        أرقام الترابيزات (بفاصلة، مسافة، أو سطر جديد)
       </label>
       <textarea
         id="desk-list"
@@ -61,7 +61,7 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
           className="rounded px-4 py-2 text-sm font-semibold"
           style={{ background: "var(--accent)", color: "#fff" }}
         >
-          Generate
+          ولّد
         </button>
         <button
           type="button"
@@ -69,10 +69,10 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
           className="rounded border px-4 py-2 text-sm font-semibold"
           style={{ borderColor: "var(--ink)", color: "var(--ink)" }}
         >
-          Print
+          اطبع
         </button>
         <span className="text-sm" style={{ color: "var(--ink)" }}>
-          {activeDesks.length} desk{activeDesks.length === 1 ? "" : "s"}
+          {activeDesks.length} ترابيزة
         </span>
       </div>
       {error && (
@@ -82,21 +82,21 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
       )}
 
       <div className="mt-8">
-        {loading && <p className="text-sm" style={{ color: "var(--ink)" }}>Generating QR codes…</p>}
+        {loading && <p className="text-sm" style={{ color: "var(--ink)" }}>بيولّد أكواد QR…</p>}
         {!loading && stickers.length > 0 && (
           <div className="sticker-sheet grid grid-cols-1 gap-6 sm:grid-cols-3 lg:grid-cols-4">
             {stickers.map((s) => (
               <div key={s.id} className="sticker">
-                {renderQr(s.qrSvg, `QR code for Desk ${s.id}`)}
-                <p className="sticker-id">DESK #{s.id}</p>
-                <p className="sticker-sub">Scan to open this desk&apos;s time-capsule &amp; focus timer</p>
+                {renderQr(s.qrSvg, `كود QR لترابيزة ${s.id}`)}
+                <p className="sticker-id">ترابيزة #{s.id}</p>
+                <p className="sticker-sub">امسح عشان تفتح كبسولة الترابيزة + مؤقت التركيز</p>
               </div>
             ))}
           </div>
         )}
         {!loading && stickers.length === 0 && !error && (
           <p className="text-sm" style={{ color: "var(--ink)" }}>
-            No desks yet — edit the list and press Generate.
+            مفيش ترابيزات لسه — عدّل القائمة واضغط ولّد.
           </p>
         )}
       </div>

@@ -41,8 +41,8 @@ export default function SealedEnvelope({
       if (!res.ok) {
         setError(
           res.status === 409
-            ? "Someone else already opened this envelope."
-            : `The wax seal wouldn't budge (${res.status}). Try again.`,
+            ? "حد تاني فتح الظرف ده قبل كده."
+            : `ختم الشمع مش عايز يفتح (${res.status}). حاول تاني.`,
         );
         return;
       }
@@ -50,7 +50,7 @@ export default function SealedEnvelope({
       setStage(nextStage);
       if (nextStage !== "opened") router.refresh();
     } catch {
-      setError("Network hiccup — the envelope stayed sealed. Try again.");
+      setError("النت وقع — الظرف فضل مختوم. حاول تاني.");
     } finally {
       setBusy(false);
     }
@@ -91,7 +91,7 @@ export default function SealedEnvelope({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Sealed envelope"
+      aria-label="ظرف مختوم"
     >
       <div
         className="w-full max-w-[420px] rounded-lg border-2 p-6 text-center"
@@ -103,11 +103,11 @@ export default function SealedEnvelope({
               ✉️
             </div>
             <h2 className="mt-3 text-lg font-bold text-ink">
-              A sealed envelope, left for the next person
+              مظروف مختوم، سيبه للي بعدك
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-ink opacity-70">
-              The previous occupant wrote something for whoever sits here next.
-              That means you. It can be read only once.
+              اللي كان قاعد هنا قبل كده كتب حاجة للي هيقعدها بعد كده. يعني انت.
+              بتتقرا مرة واحدة بس.
             </p>
             {error ? (
               <p className="mt-2 text-xs font-bold text-accent" role="alert">
@@ -124,7 +124,7 @@ export default function SealedEnvelope({
                   : "mt-4 w-full border border-accent bg-accent p-2.5 text-sm font-bold text-bg"
               }
             >
-              {busy ? "Breaking the seal..." : "Break the wax seal"}
+              {busy ? "بيكسر الختم..." : "اكسر ختم الشمع"}
             </button>
           </>
         )}
@@ -132,7 +132,7 @@ export default function SealedEnvelope({
         {stage === "opened" && (
           <>
             <p className="text-xs font-semibold text-accent">
-              ✉ Opened — read it below
+              ✉ اتفتح — اقراه تحت
             </p>
             {claimed?.authorAlias ? (
               <p className="mt-1 text-sm italic text-ink opacity-70">
@@ -140,7 +140,7 @@ export default function SealedEnvelope({
               </p>
             ) : (
               <p className="mt-1 text-sm italic text-ink opacity-70">
-                — an anonymous occupant
+                — طالب مجهول
               </p>
             )}
             {claimed?.textContent ? (
@@ -148,13 +148,13 @@ export default function SealedEnvelope({
                 {claimed.textContent}
               </p>
             ) : (
-              <p className="mt-3 text-sm text-ink opacity-70">(empty note)</p>
+              <p className="mt-3 text-sm text-ink opacity-70">(ملاحظة فاضية)</p>
             )}
             {claimed?.doodleData ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={claimed.doodleData}
-                alt="Pixel doodle inside the envelope"
+                alt="رسمة بكسل جوّه المظروف"
                 className="mx-auto mt-3 w-full rounded"
                 style={{ imageRendering: "pixelated", border: "1px solid var(--grid-line)" }}
                 width={128}
@@ -166,8 +166,8 @@ export default function SealedEnvelope({
                 {error}
               </p>
             ) : null}
-            <p className="mt-3 text-xs text-ink opacity-70">
-              What happens to it now?
+            <p className="mt-4 text-xs font-semibold text-ink">
+              تعمل له إيه دلوقتي؟
             </p>
             <div className="mt-2 flex gap-2">
               <button
@@ -176,7 +176,7 @@ export default function SealedEnvelope({
                 disabled={busy}
                 className="flex-1 border border-accent bg-accent p-2.5 text-sm font-bold text-bg"
               >
-                {busy ? "..." : "📌 Pin to Public Wall"}
+                {busy ? "..." : "📌 ثبّت على الحيطة"}
               </button>
               <button
                 type="button"
@@ -184,7 +184,7 @@ export default function SealedEnvelope({
                 disabled={busy}
                 className="flex-1 border border-ink p-2.5 text-sm text-ink"
               >
-                {busy ? "..." : "🤫 Keep Secret (Delete)"}
+                {busy ? "..." : "🤫 سيبها سر (امسح)"}
               </button>
             </div>
           </>
@@ -197,15 +197,15 @@ export default function SealedEnvelope({
             </div>
             <p className="mt-3 text-sm font-bold text-ink">
               {stage === "pinned"
-                ? "Pinned to this desk's public wall."
-                : "Kept secret — the envelope is gone forever."}
+                ? "اتثبّت على حيطة الترابيزة دي."
+                : "اتمسح سرًا — المظروف راح خالص."}
             </p>
             <button
               type="button"
               onClick={close}
               className="mt-4 w-full border border-ink p-2.5 text-sm text-ink"
             >
-              Back to the corkboard
+              ارجع للحيطة
             </button>
           </>
         )}

@@ -2,7 +2,7 @@ import type { CapsuleFeedItem } from "@/lib/feed";
 import { doodleBmpDataUri } from "@/lib/capsule";
 import PeelOffButton from "@/app/components/PeelOffButton";
 
-const DATE_FORMAT = new Intl.DateTimeFormat("en", {
+const DATE_FORMAT = new Intl.DateTimeFormat("ar-EG", {
   month: "short",
   day: "numeric",
 });
@@ -62,7 +62,7 @@ function DoodleBody({ capsule }: { capsule: CapsuleFeedItem }) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={capsule.doodleData}
-      alt={`Pixel doodle${capsule.authorAlias ? ` by ${capsule.authorAlias}` : ""}`}
+      alt={`رسمة بكسل${capsule.authorAlias ? ` للـ ${capsule.authorAlias}` : ""}`}
       className="w-full rounded"
       style={{ imageRendering: "pixelated", border: "1px solid var(--grid-line)" }}
       width={128}
@@ -103,7 +103,7 @@ function CassetteBody({ capsule }: { capsule: CapsuleFeedItem }) {
             </>
           ) : domain ? (
             <span>
-              A song from{" "}
+              أغنية من{" "}
               <span className="font-semibold break-all">{domain}</span>
             </span>
           ) : (
@@ -123,7 +123,7 @@ function CassetteBody({ capsule }: { capsule: CapsuleFeedItem }) {
         />
       ) : null}
       <p className="mt-1 text-[10px] uppercase tracking-wide text-ink opacity-50">
-        Desk cassette · track recommendation
+        كاسيت المكتب · أغنية مقترحة
       </p>
     </div>
   );
@@ -142,12 +142,12 @@ function PassDoodleBody({ capsule }: { capsule: CapsuleFeedItem }) {
   return (
     <div>
       <p className="mb-2 text-xs font-semibold text-accent">
-        ✏️ Collaborative doodle
+        ✏️ رسمة جماعية
       </p>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
-        alt={`Collaborative pixel doodle${capsule.authorAlias ? ` by ${capsule.authorAlias}` : ""}`}
+        alt={`رسمة جماعية بكسل${capsule.authorAlias ? ` للـ ${capsule.authorAlias}` : ""}`}
         className="w-full rounded"
         style={{ imageRendering: "pixelated", border: "1px solid var(--grid-line)" }}
         width={128}
@@ -172,7 +172,7 @@ function bodyFor(capsule: CapsuleFeedItem) {
       return (
         <>
           <p className="mb-2 text-xs font-semibold text-accent">
-            ✉ Opened envelope
+            ✉ مظروف متفتح
           </p>
           <TextBody capsule={capsule} />
           <DoodleBody capsule={capsule} />
