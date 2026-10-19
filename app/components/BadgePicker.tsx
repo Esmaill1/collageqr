@@ -67,52 +67,59 @@ export default function BadgePicker({
 
   if (voted) {
     return (
-      <aside
-        className="mt-3 border-dashed p-3 text-center"
-        style={{ border: "1px dashed var(--grid-line)" }}
-        aria-label="تقييمات الترابيزة"
-      >
-        <p className="text-xs text-ink opacity-70">
-          ⭐شكرًا — تقييمك بقى ظاهر فوق في الهيدر.
+      <aside className="card mt-3 p-4 text-center" aria-label="تقييمات الترابيزة">
+        <p className="text-sm font-semibold" style={{ color: "var(--success)" }}>
+          ⭐ شكرًا — تقييمك بقى ظاهر فوق في الهيدر.
         </p>
       </aside>
     );
   }
 
   return (
-    <aside
-      className="mt-3 p-3"
-      style={{ border: "1px dashed var(--grid-line)" }}
-      aria-label="قيّم الترابيزة دي"
-    >
-      <p className="text-xs font-semibold text-ink">
-        قيّم المكان ده <span className="font-normal opacity-60">(اختر كحد أقصى وصفين)</span>
+    <aside className="card mt-3 p-4" aria-label="قيّم الترابيزة دي">
+      <p className="text-sm font-semibold" style={{ color: "var(--ink)" }}>
+        قيّم المكان ده{" "}
+        <span className="font-normal" style={{ color: "var(--ink-muted)" }}>
+          (اختر كحد أقصى وصفين)
+        </span>
       </p>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         {BADGES.map((badge) => {
           const isOn = selected.includes(badge.key);
+          const full = !isOn && selected.length >= MAX_BADGES;
           return (
             <button
               key={badge.key}
               type="button"
               onClick={() => toggle(badge.key)}
               aria-pressed={isOn}
-              className={
-                isOn
-                  ? "rounded-full border border-accent px-2.5 py-1 text-xs font-bold text-accent"
-                  : "rounded-full border px-2.5 py-1 text-xs text-ink"
-              }
-              style={
-                isOn ? undefined : { borderColor: "var(--grid-line)" }
-              }
+              disabled={full}
+              title={full ? "مكملين وصفين" : undefined}
+              className={`btn btn-sm ${isOn ? "" : "btn-ghost"}`}
+              style={{
+                borderRadius: "var(--radius-pill)",
+                ...(isOn
+                  ? {
+                      borderColor: "var(--accent)",
+                      backgroundColor: "var(--accent-soft)",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }
+                  : {}),
+              }}
             >
+              {isOn ? "✓ " : ""}
               {badge.emoji} {badge.label}
             </button>
           );
         })}
       </div>
       {error ? (
-        <p className="mt-2 text-xs font-bold text-accent" role="alert">
+        <p
+          className="mt-2 text-sm font-semibold"
+          style={{ color: "var(--danger)" }}
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
@@ -120,11 +127,9 @@ export default function BadgePicker({
         type="button"
         onClick={submit}
         disabled={selected.length === 0 || submitting}
-        className={
-          selected.length > 0 && !submitting
-            ? "mt-2 w-full border border-accent p-2 text-xs font-bold text-accent"
-            : "mt-2 w-full border border-ink p-2 text-xs opacity-40 text-ink"
-        }
+        aria-disabled={selected.length === 0 || submitting}
+        title={selected.length === 0 ? "اختار وصف واحد على الأقل الأول" : undefined}
+        className="btn btn-primary btn-block mt-3"
       >
         {submitting ? "بيتسجّل..." : "احفظ التقييم"}
       </button>

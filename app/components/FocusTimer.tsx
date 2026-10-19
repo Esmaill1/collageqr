@@ -51,6 +51,77 @@ function formatClock(remainingMs: number): string {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
+const RING_RADIUS = 80;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+function ProgressRing({
+  dashOffset,
+  center,
+  ariaLabel,
+  pulse = false,
+  ringDim = false,
+  clockDim = false,
+}: {
+  dashOffset: number;
+  center: string;
+  ariaLabel: string;
+  pulse?: boolean;
+  ringDim?: boolean;
+  clockDim?: boolean;
+}) {
+  return (
+    <div
+      role="timer"
+      aria-live="polite"
+      aria-label={ariaLabel}
+      className="relative flex items-center justify-center"
+      style={{ width: 200, height: 200 }}
+    >
+      <svg
+        viewBox="0 0 200 200"
+        width={200}
+        height={200}
+        style={{
+          opacity: ringDim ? 0.3 : 1,
+          transition: "opacity var(--transition-base)",
+        }}
+      >
+        <circle
+          cx="100"
+          cy="100"
+          r={RING_RADIUS}
+          fill="none"
+          stroke="var(--grid-line)"
+          strokeWidth="10"
+        />
+        <circle
+          cx="100"
+          cy="100"
+          r={RING_RADIUS}
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={RING_CIRCUMFERENCE}
+          strokeDashoffset={dashOffset}
+          transform="rotate(-90 100 100)"
+          className={pulse ? "pulse-soft" : undefined}
+        />
+      </svg>
+      <span
+        className="absolute font-semibold tabular-nums"
+        style={{
+          fontSize: "var(--text-3xl)",
+          color: clockDim ? "var(--ink-muted)" : "var(--ink)",
+          transition: "color var(--transition-base)",
+        }}
+      >
+        {center}
+      </span>
+    </div>
+  );
+}
+
 export default function FocusTimer({
   deskId,
   onSessionComplete,
@@ -365,22 +436,42 @@ export default function FocusTimer({
   }, [persistSession, teardown, updatePhase]);
 
   const clock = formatClock(remainingMs);
+  const elapsedMs = Math.min(SESSION_MS, Math.max(0, SESSION_MS - remainingMs));
+  const dashOffset = RING_CIRCUMFERENCE * (1 - elapsedMs / SESSION_MS);
 
   if (phase === "completed") {
     return (
-      <div className="flex flex-col items-center gap-1 rounded-md border border-accent p-3">
-        <p className="text-sm font-bold text-accent">+20 XP للترابيزة دي.</p>
-        <p className="text-xs text-ink opacity-70">
+      <section className="card flex flex-col items-center gap-[var(--space-3)] p-[var(--space-6)]">
+        <ProgressRing dashOffset={0} center="✓" ariaLabel="خلصت جلسة التركيز" />
+        <p
+          aria-live="polite"
+          className="text-center font-bold"
+          style={{ fontSize: "var(--text-lg)", color: "var(--accent)" }}
+        >
+          +20 XP للترابيزة دي.
+        </p>
+        <p
+          className="text-center"
+          style={{ fontSize: "var(--text-sm)", color: "var(--ink-muted)" }}
+        >
           كسبت توكن توقيع — شغّال لمدة 15 دقيقة.
         </p>
-      </div>
+      </section>
     );
   }
 
   if (phase === "error") {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-md border border-ink p-3">
-        <p className="text-xs text-red-600">{errorHint}</p>
+      <section
+        role="alert"
+        className="card flex flex-col items-center gap-[var(--space-4)] p-[var(--space-6)]"
+      >
+        <p
+          className="text-center font-semibold"
+          style={{ fontSize: "var(--text-base)", color: "var(--danger)" }}
+        >
+          {errorHint}
+        </p>
         {canRetry && sessionRef.current !== null ? (
           <button
             type="button"
@@ -389,7 +480,7 @@ export default function FocusTimer({
               clearGrace();
               updatePhase("running");
             }}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-bold text-[#f7f3ea]"
+            className="btn btn-primary btn-block"
           >
             حاول تاني تكمل
           </button>
@@ -397,75 +488,97 @@ export default function FocusTimer({
           <button
             type="button"
             onClick={giveUp}
-            className="rounded-md border border-ink px-4 py-2 text-sm text-ink"
+            className="btn btn-ghost btn-block"
           >
-            ارجع
+            رجوع
           </button>
         )}
-      </div>
+      </section>
     );
   }
 
   if (phase === "paused") {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-md border border-ink p-3">
-        <p className="text-xs text-ink opacity-70">
+      <section className="card flex flex-col items-center gap-[var(--space-4)] p-[var(--space-6)]">
+        <ProgressRing
+          dashOffset={dashOffset}
+          center={clock}
+          ariaLabel="المؤقت وقف"
+          ringDim
+          clockDim
+        />
+        <p
+          aria-live="polite"
+          className="text-center font-semibold"
+          style={{ fontSize: "var(--text-base)", color: "var(--ink)" }}
+        >
           المؤقت وقف… ارجع للتبويبة عشان تكمل.
         </p>
-        <span className="text-3xl font-semibold tabular-nums text-ink opacity-40">
-          {clock}
-        </span>
-        <button
-          type="button"
-          onClick={giveUp}
-          className="text-xs text-ink opacity-50 underline"
-        >
+        <button type="button" onClick={giveUp} className="btn btn-ghost btn-sm">
           سيبها
         </button>
-      </div>
+      </section>
     );
   }
 
   if (phase === "idle") {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-md border border-ink p-3">
-        <p className="text-sm font-bold text-ink">
+      <section className="card flex flex-col items-center gap-[var(--space-4)] p-[var(--space-6)]">
+        <p
+          className="text-center font-bold"
+          style={{ fontSize: "var(--text-lg)", color: "var(--ink)" }}
+        >
           خلّص 20 دقيقة عشان توقّع على ترابيزة {deskId}.
         </p>
         <button
           type="button"
           onClick={() => void start()}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-bold text-[#f7f3ea]"
+          className="btn btn-primary btn-block"
+          style={{ fontSize: "var(--text-xl)" }}
         >
           ابدأ الجلسة
         </button>
-        <p className="text-xs text-ink opacity-60">
-          اعمل ردك على التبويبة دي. المؤقت بيقف لو خرجت.
+        <p
+          className="text-center"
+          style={{ fontSize: "var(--text-sm)", color: "var(--ink-muted)" }}
+        >
+          سيب التبويبة ده عشان المؤقت يقف.
         </p>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 rounded-md border border-ink p-3">
-      <span
-        className="text-3xl font-semibold tabular-nums text-ink"
-        aria-live="polite"
+    <section className="card flex flex-col items-center gap-[var(--space-4)] p-[var(--space-6)]">
+      {phase === "left" && graceLeftMs !== null ? (
+        <p
+          aria-live="polite"
+          className="font-bold"
+          style={{ fontSize: "var(--text-lg)", color: "var(--accent)" }}
+        >
+          سماح {Math.ceil(graceLeftMs / 1000)} ثانية…
+        </p>
+      ) : null}
+      <ProgressRing
+        dashOffset={dashOffset}
+        center={clock}
+        ariaLabel={
+          phase === "left"
+            ? "فترة سماح قبل ما المؤقت يقف"
+            : `جلسة التركيز شغالة، متبقي ${clock}`
+        }
+        pulse={phase === "running"}
+        clockDim={phase === "left"}
+      />
+      <p
+        className="text-center"
+        style={{ fontSize: "var(--text-sm)", color: "var(--ink-muted)" }}
       >
-        {clock}
-      </span>
-      <p className="text-xs text-ink opacity-60">
-        {phase === "left" && graceLeftMs !== null
-          ? `سماح ${Math.ceil(graceLeftMs / 1000)} ثانية…`
-          : "سيب التبويبة ده عشان المؤقت يقف."}
+        سيب التبويبة ده عشان المؤقت يقف.
       </p>
-      <button
-        type="button"
-        onClick={giveUp}
-        className="text-xs text-ink opacity-50 underline"
-      >
+      <button type="button" onClick={giveUp} className="btn btn-ghost btn-sm">
         سيبها
       </button>
-    </div>
+    </section>
   );
 }

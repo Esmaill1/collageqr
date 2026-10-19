@@ -81,13 +81,28 @@ export default function PeelOffButton({
     label = "✕ شيل";
   }
 
+  const danger = state.kind !== "idle";
+
   return (
     <button
       type="button"
       onClick={handleClick}
       disabled={busy || done}
       title="بلّغ عن الورقة دي للمشرفين"
-      className="text-[10px] uppercase tracking-wide text-ink opacity-35 transition-opacity hover:opacity-70 disabled:cursor-not-allowed"
+      className={`btn btn-sm ${danger ? "" : "btn-ghost"}`}
+      style={
+        danger
+          ? {
+              color: "var(--danger)",
+              borderColor: "var(--danger)",
+              background: "transparent",
+            }
+          : {
+              color: "var(--ink-faint)",
+              borderColor: "var(--grid-line)",
+              background: "transparent",
+            }
+      }
     >
       {label}
     </button>

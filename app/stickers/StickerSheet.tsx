@@ -42,64 +42,86 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
   }, [activeDesks]);
 
   return (
-    <section className="not-print w-full max-w-3xl">
-      <label htmlFor="desk-list" className="mb-2 block text-sm font-medium" style={{ color: "var(--ink)" }}>
-        أرقام الترابيزات (بفاصلة، مسافة، أو سطر جديد)
-      </label>
-      <textarea
-        id="desk-list"
-        rows={6}
-        value={deskInput}
-        onChange={(e) => setDeskInput(e.target.value)}
-        className="w-full rounded border p-3 font-mono text-sm"
-        style={{ borderColor: "var(--grid-line)", background: "var(--bg)", color: "var(--ink)" }}
-      />
-      <div className="mt-3 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setActiveDesks(parseDeskList(deskInput))}
-          className="rounded px-4 py-2 text-sm font-semibold"
-          style={{ background: "var(--accent)", color: "#fff" }}
+    <section className="w-full">
+      <div className="not-print">
+        <label
+          htmlFor="desk-list"
+          className="mb-2 block text-sm font-medium"
+          style={{ color: "var(--ink)" }}
         >
-          ولّد
-        </button>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="rounded border px-4 py-2 text-sm font-semibold"
-          style={{ borderColor: "var(--ink)", color: "var(--ink)" }}
-        >
-          اطبع
-        </button>
-        <span className="text-sm" style={{ color: "var(--ink)" }}>
-          {activeDesks.length} ترابيزة
-        </span>
-      </div>
-      {error && (
-        <p className="mt-3 text-sm" style={{ color: "var(--accent)" }}>
-          {error}
+          أرقام الترابيزات
+        </label>
+        <textarea
+          id="desk-list"
+          rows={6}
+          value={deskInput}
+          onChange={(e) => setDeskInput(e.target.value)}
+          className="input font-mono text-sm"
+          style={{ resize: "vertical" }}
+        />
+        <p className="mt-1 text-xs" style={{ color: "var(--ink-faint)" }}>
+          بفاصلة، مسافة، أو سطر جديد
         </p>
-      )}
 
-      <div className="mt-8">
-        {loading && <p className="text-sm" style={{ color: "var(--ink)" }}>بيولّد أكواد QR…</p>}
-        {!loading && stickers.length > 0 && (
-          <div className="sticker-sheet grid grid-cols-1 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-            {stickers.map((s) => (
-              <div key={s.id} className="sticker">
-                {renderQr(s.qrSvg, `كود QR لترابيزة ${s.id}`)}
-                <p className="sticker-id">ترابيزة #{s.id}</p>
-                <p className="sticker-sub">امسح عشان تفتح كبسولة الترابيزة + مؤقت التركيز</p>
-              </div>
-            ))}
-          </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setActiveDesks(parseDeskList(deskInput))}
+            className="btn btn-primary"
+          >
+            ولّد
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="btn btn-ghost"
+          >
+            اطبع
+          </button>
+          <span className="pill" style={{ color: "var(--ink-muted)" }}>
+            {activeDesks.length} ترابيزة
+          </span>
+        </div>
+
+        {error && (
+          <p
+            role="alert"
+            className="mt-3 text-sm font-semibold"
+            style={{ color: "var(--danger)" }}
+          >
+            {error}
+          </p>
+        )}
+      </div>
+
+      <div className="not-print mt-8">
+        {loading && (
+          <p
+            className="flex items-center gap-2 text-sm"
+            style={{ color: "var(--ink-muted)" }}
+          >
+            <span className="cassette-spin" aria-hidden="true">↻</span>
+            <span>بيولّد أكواد QR…</span>
+          </p>
         )}
         {!loading && stickers.length === 0 && !error && (
-          <p className="text-sm" style={{ color: "var(--ink)" }}>
+          <p className="text-sm" style={{ color: "var(--ink-muted)" }}>
             مفيش ترابيزات لسه — عدّل القائمة واضغط ولّد.
           </p>
         )}
       </div>
+
+      {!loading && stickers.length > 0 && (
+        <div className="sticker-sheet mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+          {stickers.map((s) => (
+            <div key={s.id} className="sticker">
+              {renderQr(s.qrSvg, `كود QR لترابيزة ${s.id}`)}
+              <p className="sticker-id">ترابيزة #{s.id}</p>
+              <p className="sticker-sub">امسح عشان تفتح كبسولة الترابيزة + مؤقت التركيز</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       <style jsx global>{`
         .sticker {

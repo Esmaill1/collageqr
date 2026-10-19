@@ -33,28 +33,48 @@ export default function DeskHeader({
   const tags = topTags(desk.tagCounts);
 
   return (
-    <header
-      className="mb-5 rounded-lg border p-4"
-      style={{ borderColor: "var(--grid-line)" }}
-    >
-      <h1 className="text-2xl font-bold text-ink">ترابيزة {desk.id}</h1>
-      <p className="mt-1 text-sm text-ink opacity-70">{desk.zoneName}</p>
+    <header className="card mb-6" style={{ padding: "var(--space-6)" }}>
+      <h1
+        className="font-bold"
+        style={{ color: "var(--ink)", fontSize: "var(--text-2xl)", lineHeight: 1.25 }}
+      >
+        ترابيزة {desk.id}
+      </h1>
+      <p
+        className="mt-1"
+        style={{ color: "var(--ink-muted)", fontSize: "var(--text-sm)" }}
+      >
+        {desk.zoneName}
+      </p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink">
-        <span title={`المستوى ${desk.level}`}>
-          <span className="font-semibold text-accent">مستوى {desk.level}</span>{" "}
-          {levelLabel(desk.level)}
+      <div
+        className="flex flex-wrap items-center gap-x-4 gap-y-2"
+        style={{ marginTop: "var(--space-6)" }}
+      >
+        <span
+          title={`المستوى ${desk.level}`}
+          style={{ color: "var(--ink)", fontSize: "var(--text-base)" }}
+        >
+          <span style={{ color: "var(--accent)", fontWeight: 700 }}>
+            مستوى {desk.level}
+          </span>{" "}
+          <span style={{ color: "var(--ink-muted)" }}>{levelLabel(desk.level)}</span>
         </span>
-        <span className="opacity-70">{hours} ساعة مسجّلة</span>
+        <span className="pill" style={{ color: "var(--ink-muted)" }}>
+          {hours} ساعة مسجّلة
+        </span>
       </div>
 
       {tags.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-2">
+        <ul
+          className="flex flex-wrap gap-2"
+          style={{ marginTop: "var(--space-6)" }}
+        >
           {tags.map((tag) => (
             <li
               key={tag.key}
-              className="rounded-full border px-2.5 py-1 text-xs text-ink"
-              style={{ borderColor: "var(--grid-line)" }}
+              className="pill"
+              style={{ color: "var(--ink)" }}
               title={`${tag.count} تقييم`}
             >
               {friendlyTagLabel(tag.key)}

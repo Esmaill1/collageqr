@@ -17,12 +17,17 @@ export default function CassetteInput({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const looksValid = isValidHttpUrl(value.trim());
+  const trimmed = value.trim();
+  const looksValid = isValidHttpUrl(trimmed);
+  const invalid = trimmed.length > 0 && !looksValid;
 
   return (
-    <div className="mt-3">
-      <label className="block text-xs font-semibold text-ink" htmlFor="track-url">
-        🎵 الطلب أغنية للي بعدك على الترابيزة دي
+    <div className="mt-4">
+      <label
+        htmlFor="track-url"
+        className="block text-sm font-semibold text-ink"
+      >
+        لينك الأغنية
       </label>
       <input
         id="track-url"
@@ -31,15 +36,20 @@ export default function CassetteInput({
         autoComplete="off"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="الصق لينك أغنية (Spotify / YouTube / SoundCloud / Anghami)"
-        className="mt-1 w-full border border-ink bg-bg p-2 text-sm text-ink break-all focus:border-accent focus:outline-none"
+        placeholder="الصق لينك (Spotify / YouTube / SoundCloud / Anghami)"
+        className="input mt-2 break-all"
+        aria-invalid={invalid ? true : undefined}
         aria-describedby="track-url-hint"
       />
-      <p id="track-url-hint" className="mt-1 text-[10px] opacity-60 text-ink">
-        {value.trim().length === 0
+      <p
+        id="track-url-hint"
+        className="mt-2 text-xs"
+        style={{ color: invalid ? "var(--danger)" : "var(--ink-muted)" }}
+      >
+        {trimmed.length === 0
           ? SUPPORTED
           : looksValid
-            ? "اسم الأغنية والمغني هيتجيبوا أتوماتيك لما تثبّت."
+            ? "اسم الأغنية والمغني هيتجيبوا أوتوماتيك لما تثبّت."
             : "ده شكله مش لينك — الصق لينك https:// كامل."}
       </p>
     </div>

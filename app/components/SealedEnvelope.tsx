@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 /**
@@ -28,6 +28,13 @@ export default function SealedEnvelope({
   const [claimed, setClaimed] = useState<ClaimedCapsule | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Presentational only: triggers the backdrop fade-in after first paint.
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   const call = async (init: RequestInit, nextStage: Stage) => {
     setBusy(true);
@@ -89,28 +96,45 @@ export default function SealedEnvelope({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      style={{
+        opacity: shown ? 1 : 0,
+        transition: "opacity var(--transition-base) ease",
+      }}
       role="dialog"
       aria-modal="true"
       aria-label="ظرف مختوم"
     >
       <div
-        className="w-full max-w-[420px] rounded-lg border-2 p-6 text-center"
-        style={{ borderColor: "var(--accent)", backgroundColor: "var(--bg)" }}
+        className="card w-full max-w-[420px] p-6 text-center"
+        style={{
+          backgroundColor: "var(--paper-raised)",
+          boxShadow: "var(--shadow-lift)",
+        }}
       >
         {stage === "sealed" && (
           <>
             <div className="text-5xl" aria-hidden="true">
               ✉️
             </div>
-            <h2 className="mt-3 text-lg font-bold text-ink">
+            <h2
+              className="mt-3 text-lg font-bold"
+              style={{ color: "var(--ink)" }}
+            >
               مظروف مختوم، سيبه للي بعدك
             </h2>
-            <p className="mt-1 text-xs leading-relaxed text-ink opacity-70">
+            <p
+              className="mt-1 text-xs leading-relaxed"
+              style={{ color: "var(--ink-muted)" }}
+            >
               اللي كان قاعد هنا قبل كده كتب حاجة للي هيقعدها بعد كده. يعني انت.
               بتتقرا مرة واحدة بس.
             </p>
             {error ? (
-              <p className="mt-2 text-xs font-bold text-accent" role="alert">
+              <p
+                className="mt-2 text-sm font-semibold"
+                style={{ color: "var(--danger)" }}
+                role="alert"
+              >
                 {error}
               </p>
             ) : null}
@@ -118,11 +142,7 @@ export default function SealedEnvelope({
               type="button"
               onClick={handleOpen}
               disabled={busy}
-              className={
-                busy
-                  ? "mt-4 w-full border border-ink p-2.5 text-sm font-bold opacity-40 text-ink"
-                  : "mt-4 w-full border border-accent bg-accent p-2.5 text-sm font-bold text-bg"
-              }
+              className="btn btn-primary btn-block mt-4"
             >
               {busy ? "بيكسر الختم..." : "اكسر ختم الشمع"}
             </button>
@@ -131,24 +151,41 @@ export default function SealedEnvelope({
 
         {stage === "opened" && (
           <>
-            <p className="text-xs font-semibold text-accent">
+            <p
+              className="text-xs font-semibold"
+              style={{ color: "var(--accent)" }}
+            >
               ✉ اتفتح — اقراه تحت
             </p>
             {claimed?.authorAlias ? (
-              <p className="mt-1 text-sm italic text-ink opacity-70">
+              <p
+                className="mt-1 text-sm italic"
+                style={{ color: "var(--ink-muted)" }}
+              >
                 — {claimed.authorAlias}
               </p>
             ) : (
-              <p className="mt-1 text-sm italic text-ink opacity-70">
+              <p
+                className="mt-1 text-sm italic"
+                style={{ color: "var(--ink-muted)" }}
+              >
                 — طالب مجهول
               </p>
             )}
             {claimed?.textContent ? (
-              <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink">
+              <p
+                className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed"
+                style={{ color: "var(--ink)" }}
+              >
                 {claimed.textContent}
               </p>
             ) : (
-              <p className="mt-3 text-sm text-ink opacity-70">(ملاحظة فاضية)</p>
+              <p
+                className="mt-3 text-sm"
+                style={{ color: "var(--ink-muted)" }}
+              >
+                (ملاحظة فاضية)
+              </p>
             )}
             {claimed?.doodleData ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -162,11 +199,18 @@ export default function SealedEnvelope({
               />
             ) : null}
             {error ? (
-              <p className="mt-2 text-xs font-bold text-accent" role="alert">
+              <p
+                className="mt-2 text-sm font-semibold"
+                style={{ color: "var(--danger)" }}
+                role="alert"
+              >
                 {error}
               </p>
             ) : null}
-            <p className="mt-4 text-xs font-semibold text-ink">
+            <p
+              className="mt-4 text-xs font-semibold"
+              style={{ color: "var(--ink)" }}
+            >
               تعمل له إيه دلوقتي؟
             </p>
             <div className="mt-2 flex gap-2">
@@ -174,7 +218,7 @@ export default function SealedEnvelope({
                 type="button"
                 onClick={handlePin}
                 disabled={busy}
-                className="flex-1 border border-accent bg-accent p-2.5 text-sm font-bold text-bg"
+                className="btn btn-primary flex-1"
               >
                 {busy ? "..." : "📌 ثبّت على الحيطة"}
               </button>
@@ -182,7 +226,7 @@ export default function SealedEnvelope({
                 type="button"
                 onClick={handleKeepSecret}
                 disabled={busy}
-                className="flex-1 border border-ink p-2.5 text-sm text-ink"
+                className="btn btn-danger flex-1"
               >
                 {busy ? "..." : "🤫 سيبها سر (امسح)"}
               </button>
@@ -195,7 +239,10 @@ export default function SealedEnvelope({
             <div className="text-4xl" aria-hidden="true">
               {stage === "pinned" ? "📌" : "🤫"}
             </div>
-            <p className="mt-3 text-sm font-bold text-ink">
+            <p
+              className="mt-3 text-sm font-bold"
+              style={{ color: "var(--ink)" }}
+            >
               {stage === "pinned"
                 ? "اتثبّت على حيطة الترابيزة دي."
                 : "اتمسح سرًا — المظروف راح خالص."}
@@ -203,7 +250,7 @@ export default function SealedEnvelope({
             <button
               type="button"
               onClick={close}
-              className="mt-4 w-full border border-ink p-2.5 text-sm text-ink"
+              className="btn btn-ghost btn-block mt-4"
             >
               ارجع للحيطة
             </button>

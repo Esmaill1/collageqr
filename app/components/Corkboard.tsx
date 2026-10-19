@@ -11,10 +11,23 @@ export default function Corkboard({
   if (capsules.length === 0) {
     return (
       <section
-        className="rounded-lg border p-6 text-center text-sm text-ink opacity-70"
-        style={{ borderColor: "var(--grid-line)" }}
+        aria-label="لوحة الفلين بتاعة المكتب"
+        className="flex flex-col items-center justify-center px-6 py-10 text-center"
+        style={{
+          border: "1px dashed var(--grid-line)",
+          borderRadius: "var(--radius-lg)",
+          background: "var(--paper)",
+        }}
       >
-        مفيش أثر هنا لسه. كن أول واحد سيب حاجة.
+        <span aria-hidden="true" style={{ fontSize: "var(--text-3xl)" }}>
+          📌
+        </span>
+        <p
+          className="mt-2"
+          style={{ color: "var(--ink-muted)", fontSize: "var(--text-sm)" }}
+        >
+          مفيش أثر هنا لسه. كن أول واحد سيب حاجة.
+        </p>
       </section>
     );
   }
@@ -23,15 +36,22 @@ export default function Corkboard({
     <section aria-label="لوحة الفلين بتاعة المكتب">
       {sealedPendingCount > 0 && (
         <p
-          className="mb-4 rounded-lg border border-dashed px-4 py-3 text-xs text-ink opacity-80"
-          style={{ borderColor: "var(--accent)" }}
+          className="mb-4 px-4 py-3"
+          style={{
+            border: "1px solid var(--accent)",
+            borderRadius: "var(--radius-md)",
+            background: "var(--accent-soft)",
+            color: "var(--accent)",
+            fontSize: "var(--text-sm)",
+            fontWeight: 600,
+          }}
         >
           ✉ مظروف مختوم مستني اللي بعدك
         </p>
       )}
-      <ul className="flex flex-col gap-4">
+      <ul className="columns-1 gap-4 sm:columns-2">
         {capsules.map((capsule) => (
-          <li key={capsule.id}>
+          <li key={capsule.id} className="mb-4 break-inside-avoid">
             <CapsuleCard capsule={capsule} />
           </li>
         ))}

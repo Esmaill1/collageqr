@@ -35,23 +35,23 @@ export default async function DeskPage({
   if (!deskId || !feed || !feed.desk) {
     return (
       <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col items-center justify-center px-5 text-center">
-        <div
-          className="w-full rounded-lg border p-8"
-          style={{ borderColor: "var(--grid-line)" }}
-        >
-          <span className="text-4xl">📌</span>
-          <h1 className="mt-4 text-xl font-bold text-ink">
+        <div className="card w-full p-8">
+          <span className="text-4xl" aria-hidden="true">📌</span>
+          <h1
+            className="mt-4 text-xl font-bold"
+            style={{ color: "var(--ink)" }}
+          >
             {deskId ? "الترابيزة دي مش موجودة" : "امسح QR ترابيزة"}
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-ink opacity-70">
+          <p
+            className="mt-2 text-sm leading-relaxed"
+            style={{ color: "var(--ink-muted)" }}
+          >
             {deskId
               ? "الترابيزة دي لسه متسجلةش. اتأكد من الاستيكر على ترابيزتك وامسح تاني."
               : "دوّر على استيكر DeskLore على ترابيزة في المكتبة، امسح الـ QR، وافتح حيطة الترابيزة دي."}
           </p>
-          <Link
-            href="/leaderboard"
-            className="mt-4 inline-block text-xs text-ink underline opacity-70"
-          >
+          <Link href="/leaderboard" className="btn btn-ghost btn-block mt-6">
             🏆 ترتيب الترابيزات
           </Link>
         </div>
@@ -60,7 +60,7 @@ export default async function DeskPage({
   }
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pb-16 pt-6">
+    <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col gap-8 px-4 pb-16 pt-6">
       {/* Focus session → artifact flow: floating action bar at the top of
           the screen (PRD §2), composer appears only after a session completes. */}
       <DeskInteraction deskId={feed.desk.id} />
@@ -68,10 +68,11 @@ export default async function DeskPage({
       <DeskHeader desk={feed.desk} />
       <Corkboard capsules={feed.capsules} sealedPendingCount={feed.sealedPendingCount} />
 
-      <footer className="mt-8 text-center">
+      <footer>
         <Link
           href="/leaderboard"
-          className="text-xs text-ink underline opacity-60"
+          className="btn btn-ghost btn-block"
+          style={{ color: "var(--ink-muted)" }}
         >
           🏆 ترتيب الترابيزات — أكثر الترابيزات نشاط ده الأسبوع
         </Link>

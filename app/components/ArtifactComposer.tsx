@@ -188,7 +188,11 @@ export default function ArtifactComposer({
   if (published) {
     const passChild = published.type === "PASS_DOODLE" && published.passParentId != null;
     return (
-      <section className="border border-accent p-4" aria-live="polite">
+      <section
+        className="card p-5"
+        style={{ background: "var(--accent-soft)", borderColor: "var(--accent)" }}
+        aria-live="polite"
+      >
         <p className="text-sm font-bold text-accent">
           {published.type === "SEALED"
             ? "ملاحظتك المختومة مستنّية اللي بعدك."
@@ -196,9 +200,9 @@ export default function ArtifactComposer({
               ? "نصّك اتثبّت — مترقّب اللي يكمّله بعدك."
               : published.type === "PASS_DOODLE" && passChild
                 ? "الرسمة اكتملت! اتنين رسّاموا، لوحة واحدة."
-                : `اتثبّت على ترابيزة ${published.deskId}!`}
+                : `+ اتثبّت على ترابيزة ${published.deskId}!`}
         </p>
-        <p className="mt-1 text-xs opacity-70 text-ink">
+        <p className="mt-2 text-xs text-[color:var(--ink-muted)]">
           {published.type === "SEALED"
             ? "هتفضل مخبوحة لحد ما حد يلتقط كود الترابيزة دي."
             : published.type === "PASS_DOODLE" && !passChild
@@ -214,10 +218,11 @@ export default function ArtifactComposer({
       key={value}
       type="button"
       onClick={() => setMode(value)}
+      aria-pressed={mode === value}
       className={
         mode === value
-          ? "border border-accent px-3 py-1.5 text-sm font-bold text-accent"
-          : "border border-ink px-3 py-1.5 text-sm opacity-70 text-ink"
+          ? "btn btn-sm btn-primary"
+          : "btn btn-sm btn-ghost text-[color:var(--ink-muted)]"
       }
     >
       {label}
@@ -225,21 +230,21 @@ export default function ArtifactComposer({
   );
 
   return (
-    <section className="border border-ink p-4" aria-label="سيب أثرك">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-bold text-ink">
+    <section className="card p-5" aria-label="سيب أثرك">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-base font-bold text-ink">
           سيب أثرك على ترابيزة {deskId}
         </p>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-xs opacity-60 text-ink"
-        >
+        <button type="button" onClick={onCancel} className="btn btn-sm btn-ghost">
           اغلق
         </button>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div
+        className="mt-4 flex flex-wrap gap-1 rounded-lg p-1"
+        style={{ border: "1px solid var(--grid-line)", background: "var(--bg)" }}
+        aria-label="اختار نوع الأثر"
+      >
         {tabButton("TEXT", "ملاحظة")}
         {tabButton("DOODLE", "رسمة")}
         {tabButton("SONG", "أغنية 🎵")}
@@ -248,25 +253,47 @@ export default function ArtifactComposer({
 
       {mode === "TEXT" ? (
         <>
-          <div className="mt-3">
+          <div className="mt-4">
+            <label
+              htmlFor="compose-note"
+              className="block text-sm font-semibold text-ink"
+            >
+              ملاحظتك
+            </label>
             <textarea
+              id="compose-note"
               value={text}
               onChange={(e) => setText(e.target.value)}
               maxLength={TEXT_MAX_CHARS}
               rows={4}
               placeholder={sealed ? "عايز بس اللي بعدك يقرأ إيه؟" : "الترابيزة دي شكلها إيه وانت قاعدة فيها؟ (لحد 160 حرف)"}
-              className="w-full border border-ink bg-bg p-2 text-sm text-ink focus:border-accent focus:outline-none"
+              aria-invalid={error ? true : undefined}
+              className="input mt-2"
+              style={{ resize: "vertical", touchAction: "manipulation" }}
             />
-            <p className="mt-1 text-[10px] opacity-60 text-ink">
-              فاّضي {TEXT_MAX_CHARS - cleanedText.length} — اللينكات بتتمسح أوتوماتيك.
+            <p
+              className="mt-2 text-xs font-semibold"
+              style={{
+                color:
+                  TEXT_MAX_CHARS - cleanedText.length <= 20
+                    ? "var(--danger)"
+                    : "var(--ink-faint)",
+              }}
+              aria-live="polite"
+            >
+              فاّضي {TEXT_MAX_CHARS - cleanedText.length} حرف
+            </p>
+            <p className="text-xs text-[color:var(--ink-muted)]">
+              اللينكات بتتمسح أوتوماتيك.
             </p>
           </div>
-          <label className="mt-2 flex items-center gap-2 text-xs text-ink">
+          <label className="mt-2 flex items-center gap-2 text-sm text-ink">
             <input
               type="checkbox"
               checked={sealed}
               onChange={(e) => setSealed(e.target.checked)}
               className="accent-[var(--accent)]"
+              style={{ width: 18, height: 18 }}
             />
             ✉ للي بعدك بس (ظرف مختوم)
           </label>
@@ -278,11 +305,14 @@ export default function ArtifactComposer({
       ) : mode === "SONG" ? (
         <CassetteInput value={trackUrl} onChange={setTrackUrl} />
       ) : passLoading || !passChecked ? (
-        <p className="mt-3 text-sm text-ink opacity-70" aria-live="polite">
+        <p
+          className="mt-4 text-sm text-[color:var(--ink-muted)]"
+          aria-live="polite"
+        >
           بندور على رسمة نصّية مستنّية على الترابيزة دي…
         </p>
       ) : passMode === "continue" && passPending ? (
-        <div className="mt-3">
+        <div className="mt-4">
           <p className="text-sm font-bold text-accent">
             حد بدأ رسمة هنا — كمّلها!
           </p>
@@ -293,28 +323,38 @@ export default function ArtifactComposer({
           />
         </div>
       ) : (
-        <div className="mt-3">
-          <p className="text-sm text-ink opacity-80">
+        <div className="mt-4">
+          <p className="text-sm text-[color:var(--ink-muted)]">
             ابدأ باص-رسمة (ارسم النص اللي فوق — اللي بعدك يكمّله)
           </p>
           <PassDoodleCanvas mode="start" onChange={setPassTopHalf} />
         </div>
       )}
 
-      <label className="mt-3 block text-xs opacity-70 text-ink">
-        الاسم (اختياري)
+      <div className="mt-4">
+        <label
+          htmlFor="composer-alias"
+          className="block text-sm font-semibold text-ink"
+        >
+          الاسم (اختياري)
+        </label>
         <input
+          id="composer-alias"
           type="text"
           value={alias}
           onChange={(e) => setAlias(e.target.value.slice(0, ALIAS_MAX_CHARS))}
           maxLength={ALIAS_MAX_CHARS}
           placeholder="مثلاً: طالب عمارة مصدوم"
-          className="mt-1 w-full border border-ink bg-bg p-2 text-sm text-ink focus:border-accent focus:outline-none"
+          className="input mt-2"
         />
-      </label>
+      </div>
 
       {error ? (
-        <p className="mt-2 text-xs font-bold text-accent" role="alert">
+        <p
+          className="mt-3 text-sm font-bold"
+          style={{ color: "var(--danger)" }}
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
@@ -323,11 +363,11 @@ export default function ArtifactComposer({
         type="button"
         onClick={handleSubmit}
         disabled={!canSubmit}
-        className={
-          canSubmit
-            ? "mt-3 w-full border border-accent bg-accent p-2.5 text-sm font-bold text-bg"
-            : "mt-3 w-full border border-ink p-2.5 text-sm opacity-40 text-ink"
+        title={canSubmit ? undefined : "اكتب ملاحظة أو ارسم حاجة الأول"}
+        aria-label={
+          canSubmit ? undefined : "اكتب ملاحظة أو ارسم حاجة الأول"
         }
+        className="btn btn-primary btn-block mt-3"
       >
         {submitting
           ? "بيثبّت…"

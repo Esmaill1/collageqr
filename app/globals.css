@@ -2,61 +2,253 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================================
+   DeskLore design system — grid paper & ink (day) / dark amber (night)
+   Grounded in the subject: library desk, grid paper, ink, marginalia,
+   corkboard, pushpins, sticky notes, polaroids. Low-glare per PRD §6.
+   ========================================================================= */
+
 :root {
-  /* Daytime: grid paper & ink (warm off-white / warm accent) */
-  --bg: #f7f3ea;
-  --ink: #1a1714;
-  --accent: #c05621;
-  --grid-line: rgba(26, 23, 20, 0.08);
+  /* Daytime: grid paper & ink */
+  --bg: #f7f3ea;            /* warm paper */
+  --paper: #fdfaf2;         /* fresh sheet (cards, sticky notes) */
+  --paper-raised: #ffffff;  /* polaroid frame, modal */
+  --ink: #1a1714;           /* deep ink */
+  --ink-muted: #5b5249;     /* secondary text (AA on --bg) */
+  --ink-faint: #8a8077;     /* tertiary / captions */
+  --accent: #b14a1c;        /* terracotta / ink-stamp */
+  --accent-hover: #943c16;
+  --accent-soft: rgba(177, 74, 28, 0.10);
+  --grid-line: rgba(26, 23, 20, 0.07);
+  --sticky: #f3e28a;        /* sticky-note yellow */
+  --sticky-ink: #3a2f12;    /* ink on sticky */
+  --danger: #a32a20;
+  --success: #3f6b30;
+  --shadow-pin: 2px 3px 0 rgba(26, 23, 20, 0.07);
+  --shadow-card: 0 1px 2px rgba(26, 23, 20, 0.05), 0 3px 8px rgba(26, 23, 20, 0.06);
+  --shadow-lift: 0 6px 18px rgba(26, 23, 20, 0.14);
+
+  /* Spacing scale */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-12: 48px; --space-16: 64px;
+
+  /* Type scale */
+  --text-xs: 12px; --text-sm: 14px; --text-base: 16px; --text-lg: 18px;
+  --text-xl: 22px; --text-2xl: 28px; --text-3xl: 36px;
+
+  /* Radii */
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 14px; --radius-pill: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 220ms ease;
+
+  /* Touch target */
+  --touch: 44px;
+
+  --focus-ring: 0 0 0 3px var(--accent-soft);
 }
 
 [data-theme="dark"] {
-  /* Evening: dark amber (deep charcoal / amber, low glare) */
+  /* Evening: dark amber, low glare */
   --bg: #1a1714;
-  --ink: #e8e0d2;
+  --paper: #241f1a;
+  --paper-raised: #2c2620;
+  --ink: #ece3d4;
+  --ink-muted: #b3a896;
+  --ink-faint: #847a6b;
   --accent: #d9a441;
-  --grid-line: rgba(232, 224, 210, 0.07);
+  --accent-hover: #c0892f;
+  --accent-soft: rgba(217, 164, 65, 0.14);
+  --grid-line: rgba(236, 227, 212, 0.06);
+  --sticky: #4a3f24;
+  --sticky-ink: #f3e8c8;
+  --danger: #e06d62;
+  --success: #7fb86b;
+  --shadow-pin: 2px 3px 0 rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.28);
+  --shadow-lift: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
-html {
-  color-scheme: light;
-}
-
-[data-theme="dark"] {
-  color-scheme: dark;
-}
+html { color-scheme: light; }
+[data-theme="dark"] { color-scheme: dark; }
 
 body {
   background-color: var(--bg);
   color: var(--ink);
-  font-family:
-    Tahoma,
-    "Segoe UI",
-    "Arabic Typesetting",
-    "Geeza Pro",
-    system-ui,
-    sans-serif;
+  font-family: Tahoma, "Segoe UI", "Arabic Typesetting", "Geeza Pro", system-ui, sans-serif;
+  font-size: var(--text-base);
+  line-height: 1.55;
   background-image:
     linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
     linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 24px 24px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Desk Cassette (Wave 5): gentle reel spin so the music note feels alive. */
+/* Visible, consistent keyboard focus everywhere (replaces default outline) */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+button:focus-visible, a:focus-visible, input:focus-visible,
+textarea:focus-visible, canvas:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ===== Component primitives ============================================ */
+
+@layer components {
+  /* Buttons — outcome-labelled, touch-sized, consistent */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--touch);
+    padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: background-color var(--transition-base), border-color var(--transition-base),
+                transform var(--transition-fast), box-shadow var(--transition-base);
+    user-select: none;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+  .btn-primary { background: var(--accent); color: var(--paper-raised); border-color: var(--accent); }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--grid-line); }
+  .btn-ghost:hover:not(:disabled) { background: var(--paper); border-color: var(--ink-faint); }
+
+  .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+  .btn-danger:hover:not(:disabled) { filter: brightness(0.92); }
+
+  .btn-block { width: 100%; }
+  .btn-sm { min-height: 36px; padding: var(--space-2) var(--space-3); font-size: var(--text-sm); }
+
+  /* Inputs — labelled, focus ring, error state */
+  .input {
+    width: 100%;
+    min-height: var(--touch);
+    padding: var(--space-3) var(--space-4);
+    background: var(--paper);
+    border: 1.5px solid var(--grid-line);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    color: var(--ink);
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  }
+  .input::placeholder { color: var(--ink-faint); }
+  .input:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+  .input[aria-invalid="true"] { border-color: var(--danger); }
+
+  /* Paper card — the base surface for corkboard artifacts */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--grid-line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Pills / badges */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--grid-line);
+    font-size: var(--text-xs);
+    background: var(--paper);
+  }
+
+  /* The pushpin: a small tack anchoring each corkboard artifact */
+  .pushpin {
+    position: absolute;
+    top: -8px;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--accent), var(--accent-hover));
+    box-shadow: 0 2px 3px rgba(0,0,0,0.35), inset 0 -2px 2px rgba(0,0,0,0.25);
+    z-index: 2;
+  }
+}
+
+/* ===== Corkboard signature: hand-pinned paper ========================= */
+
+/* Slight per-card rotation so the board feels pinned, not grid-aligned.
+   Applied via inline style or these helpers. */
+.pin-tilt-l { transform: rotate(-1.4deg); }
+.pin-tilt-r { transform: rotate(1.2deg); }
+.pin-tilt-l2 { transform: rotate(-0.7deg); }
+.pin-tilt-r2 { transform: rotate(0.6deg); }
+
+.card-pinned {
+  position: relative;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+.card-pinned:hover {
+  transform: rotate(0deg) translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+
+/* Sticky note (TEXT capsules) — yellow paper, no border, soft shadow */
+.sticky-note {
+  background: var(--sticky);
+  color: var(--sticky-ink);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-pin);
+  border: none;
+}
+
+/* Polaroid (DOODLE capsules) — white frame, wider bottom margin */
+.polaroid {
+  background: var(--paper-raised);
+  padding: var(--space-3) var(--space-3) var(--space-8);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+}
+
+/* ===== Animations ====================================================== */
+
+/* Desk Cassette: gentle reel spin */
 @keyframes cassette-spin {
-  from {
-    transform: rotate(-6deg) scale(1);
-  }
-  50% {
-    transform: rotate(6deg) scale(1.08);
-  }
-  to {
-    transform: rotate(-6deg) scale(1);
-  }
+  from { transform: rotate(-6deg) scale(1); }
+  50%  { transform: rotate(6deg) scale(1.08); }
+  to   { transform: rotate(-6deg) scale(1); }
 }
-
 .cassette-spin {
   display: inline-block;
   animation: cassette-spin 1.6s ease-in-out infinite;
   transform-origin: 50% 50%;
+}
+
+/* Focus ritual: the ink-ring depletes as the session progresses.
+   Driven by --progress 0..1 set inline on the ring element. */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+}
+.pulse-soft { animation: pulse-soft 2.4s ease-in-out infinite; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .card-pinned:hover { transform: none !important; }
 }

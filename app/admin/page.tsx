@@ -140,41 +140,58 @@ export default function AdminPage() {
 
   if (!token) {
     return (
-      <main
-        className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4"
-      >
-        <h1 className="mb-1 text-lg font-semibold text-ink">لوحة تحكم الإشراف</h1>
-        <p className="mb-6 text-xs text-ink opacity-60">
-          مراجعة الكبسولات المخفية والمبلّغ عنها.
-        </p>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="password"
-            value={tokenInput}
-            onChange={(e) => setTokenInput(e.target.value)}
-            placeholder="كلمة سر الأدمن"
-            className="w-full rounded border bg-transparent px-3 py-2 text-sm text-ink"
-            style={{ borderColor: "var(--grid-line)" }}
-            autoComplete="off"
-          />
-          {error && (
-            <p className="text-xs font-semibold text-accent">{error}</p>
-          )}
-          <button
-            type="submit"
-            disabled={busy || !tokenInput}
-            className="w-full rounded px-3 py-2 text-sm font-semibold text-bg"
-            style={{ backgroundColor: "var(--ink)" }}
-          >
-            {busy ? "بنشيك…" : "ادخل"}
-          </button>
-          <Link
-            href="/"
-            className="block text-center text-xs text-ink opacity-60 hover:opacity-90"
-          >
-            ← ارجع للترابيزات
-          </Link>
-        </form>
+      <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4">
+        <div className="card w-full p-8">
+          <h1 className="mb-1 text-xl font-bold" style={{ color: "var(--ink)" }}>
+            لوحة تحكم الإشراف
+          </h1>
+          <p className="mb-6 text-sm" style={{ color: "var(--ink-muted)" }}>
+            مراجعة الكبسولات المخفية والمبلّغ عنها.
+          </p>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label
+                htmlFor="admin-password"
+                className="mb-2 block text-sm font-medium"
+                style={{ color: "var(--ink)" }}
+              >
+                كلمة سر الأدمن
+              </label>
+              <input
+                type="password"
+                id="admin-password"
+                value={tokenInput}
+                onChange={(e) => setTokenInput(e.target.value)}
+                placeholder="كلمة سر الأدمن"
+                className="input"
+                autoComplete="off"
+              />
+            </div>
+            {error && (
+              <p
+                role="alert"
+                className="text-sm font-semibold"
+                style={{ color: "var(--danger)" }}
+              >
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={busy || !tokenInput}
+              className="btn btn-primary btn-block"
+            >
+              {busy ? "بنشيك…" : "ادخل"}
+            </button>
+            <Link
+              href="/"
+              className="btn btn-ghost btn-block"
+              style={{ color: "var(--ink-muted)" }}
+            >
+              ← ارجع للترابيزات
+            </Link>
+          </form>
+        </div>
       </main>
     );
   }
@@ -182,58 +199,78 @@ export default function AdminPage() {
   const count = capsules?.length ?? 0;
 
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-4 py-8">
-      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-lg font-semibold text-ink">لوحة تحكم الإشراف</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-xs text-ink opacity-60">
+    <main className="mx-auto min-h-screen w-full max-w-3xl px-4 py-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ink)" }}>
+            لوحة تحكم الإشراف
+          </h1>
+          <span
+            className="pill mt-2"
+            style={{ color: count > 0 ? "var(--accent)" : "var(--ink-muted)" }}
+          >
             مخفي / مبلّغ: <strong>{count}</strong>
           </span>
-          <Link
-            href="/"
-            className="text-xs text-ink opacity-60 hover:opacity-90"
-          >
-            ← ارجع للترابيزات
-          </Link>
         </div>
+        <Link
+          href="/"
+          className="btn btn-ghost"
+          style={{ color: "var(--ink-muted)" }}
+        >
+          ← ارجع للترابيزات
+        </Link>
       </div>
 
       {error && (
-        <p className="mb-4 text-xs font-semibold text-accent">{error}</p>
+        <p
+          role="alert"
+          className="mb-4 text-sm font-semibold"
+          style={{ color: "var(--danger)" }}
+        >
+          {error}
+        </p>
       )}
 
       {capsules === null ? (
-        <p className="text-sm text-ink opacity-60">بيحمّل…</p>
-      ) : count === 0 ? (
-        <p className="text-sm text-ink opacity-60">
-          مفيش حاجة للمراجعة — مفيش كبسولات مخفية أو مبلّغ عنها.
+        <p className="text-sm" style={{ color: "var(--ink-muted)" }}>
+          بيحمّل…
         </p>
+      ) : count === 0 ? (
+        <div className="card p-8 text-center">
+          <p className="text-sm" style={{ color: "var(--ink-muted)" }}>
+            مفيش حاجة للمراجعة — مفيش كبسولات مخفية أو مبلّغ عنها.
+          </p>
+        </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="flex flex-col gap-3">
           {capsules.map((c) => (
-            <li
-              key={c.id}
-              className="rounded-lg border p-4"
-              style={{
-                borderColor: "var(--grid-line)",
-                backgroundColor: "var(--bg)",
-              }}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-ink">
+            <li key={c.id} className="card p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold" style={{ color: "var(--ink)" }}>
                     {snapshotLabel(c)}
                   </p>
-                  <p className="text-xs text-ink opacity-70 break-words">
+                  <p
+                    className="mt-1 break-words text-sm"
+                    style={{ color: "var(--ink-muted)" }}
+                  >
                     {snippet(c)}
                   </p>
                 </div>
-                <p className="text-xs uppercase tracking-wide text-ink opacity-50">
-                  {typeLabel(c.type)} · {statusLabel(c.status)} · بلاغات{" "}
-                  {c.reportCount} ·{" "}
-                  {new Date(c.createdAt).toLocaleDateString()} · ترابيزة{" "}
-                  {c.deskId}
-                  {c.authorAlias ? ` · — ${c.authorAlias}` : ""}
+                <p
+                  className="flex flex-wrap gap-x-1 text-xs"
+                  style={{ color: "var(--ink-faint)" }}
+                >
+                  <span>{typeLabel(c.type)}</span>
+                  <span>·</span>
+                  <span>{statusLabel(c.status)}</span>
+                  <span>·</span>
+                  <span>بلاغات {c.reportCount}</span>
+                  <span>·</span>
+                  <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                  <span>·</span>
+                  <span>ترابيزة {c.deskId}</span>
+                  {c.authorAlias ? <span>· — {c.authorAlias}</span> : null}
                 </p>
               </div>
               {c.doodleData && (
@@ -254,8 +291,8 @@ export default function AdminPage() {
                   type="button"
                   disabled={busy}
                   onClick={() => act(c.id, "restore")}
-                  className="rounded px-3 py-1.5 text-xs font-semibold text-ink"
-                  style={{ border: "1px solid var(--grid-line)" }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: "var(--success)", borderColor: "var(--grid-line)" }}
                 >
                   استرجع
                 </button>
@@ -263,8 +300,7 @@ export default function AdminPage() {
                   type="button"
                   disabled={busy}
                   onClick={() => act(c.id, "delete")}
-                  className="rounded px-3 py-1.5 text-xs font-semibold text-accent"
-                  style={{ border: "1px solid var(--grid-line)" }}
+                  className="btn btn-danger btn-sm"
                 >
                   امسح
                 </button>

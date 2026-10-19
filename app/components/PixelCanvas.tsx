@@ -163,27 +163,26 @@ export default function PixelCanvas({ onChange }: PixelCanvasProps) {
       key={value}
       type="button"
       onClick={() => setTool(value)}
-      className={
-        tool === value
-          ? "border border-accent px-2 py-1 text-xs font-bold text-accent"
-          : "border border-ink px-2 py-1 text-xs opacity-70 text-ink"
-      }
+      aria-pressed={tool === value}
+      className={tool === value ? "btn btn-sm btn-primary" : "btn btn-sm btn-ghost"}
     >
       {label}
     </button>
   );
 
   return (
-    <div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-ink opacity-70">قلم</span>
-        {toolButton("S", "S")}
-        {toolButton("M", "M")}
+    <div
+      className="rounded-lg border p-3"
+      style={{ borderColor: "var(--grid-line)", background: "var(--paper)" }}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        {toolButton("S", "قلم S")}
+        {toolButton("M", "قلم M")}
         {toolButton("ERASER", "امسح")}
         <button
           type="button"
           onClick={clearGrid}
-          className="ml-auto border border-ink px-2 py-1 text-xs opacity-70 text-ink"
+          className="btn btn-sm btn-ghost ml-auto"
         >
           امسح كله
         </button>
@@ -196,10 +195,16 @@ export default function PixelCanvas({ onChange }: PixelCanvasProps) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        className="mt-2 block w-full touch-none select-none border border-ink bg-bg"
-        style={{ aspectRatio: "2 / 1", imageRendering: "pixelated" }}
+        className="mx-auto mt-3 block w-full touch-none select-none rounded-sm"
+        style={{
+          maxWidth: 480,
+          aspectRatio: "2 / 1",
+          imageRendering: "pixelated",
+          backgroundColor: "var(--paper)",
+          border: "1px solid var(--grid-line)",
+        }}
       />
-      <p className="mt-1 text-[10px] text-ink opacity-60">
+      <p className="mt-2 text-xs text-[color:var(--ink-faint)]">
         كونفاس 128×64 أبيض وأسود — ارسم حاجة صغيرة للي بعدك.
       </p>
     </div>

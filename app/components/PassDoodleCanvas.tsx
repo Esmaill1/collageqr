@@ -261,11 +261,8 @@ export default function PassDoodleCanvas({
       key={value}
       type="button"
       onClick={() => setTool(value)}
-      className={
-        tool === value
-          ? "border border-accent px-2 py-1 text-xs font-bold text-accent"
-          : "border border-ink px-2 py-1 text-xs opacity-70 text-ink"
-      }
+      aria-pressed={tool === value}
+      className={tool === value ? "btn btn-sm btn-primary" : "btn btn-sm btn-ghost"}
     >
       {label}
     </button>
@@ -277,36 +274,44 @@ export default function PassDoodleCanvas({
       : "ارسم النص اللي فوق. اللي بعدك يكمّل اللي تحت — ولا يهمّك لو خطوطك مشظّرة.";
 
   return (
-    <div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-ink opacity-70">قلم</span>
-        {toolButton("DRAW", "D")}
+    <div
+      className="rounded-lg border p-3"
+      style={{ borderColor: "var(--grid-line)", background: "var(--paper)" }}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        {toolButton("DRAW", "قلم")}
         {toolButton("ERASER", "امسح")}
         <button
           type="button"
           onClick={clearHalf}
-          className="ml-auto border border-ink px-2 py-1 text-xs opacity-70 text-ink"
+          className="btn btn-sm btn-ghost ml-auto"
         >
           {effectiveMode === "continue" ? "امسح نصّي" : "امسح اللي فوق"}
         </button>
       </div>
 
       {effectiveMode === "continue" ? (
-        <div className="mt-2">
-          <p className="text-[10px] uppercase tracking-wide text-ink opacity-50">
+        <div className="mt-3">
+          <p className="text-xs text-[color:var(--ink-muted)]">
             رسمة اللي قبلك (مقفولة)
           </p>
           <canvas
             ref={previewCanvasRef}
             width={GRID_W}
             height={HALF_ROWS}
-            className="mt-1 block w-full cursor-default select-none border border-ink bg-bg"
-            style={{ aspectRatio: "2 / 1", imageRendering: "pixelated" }}
+            className="mx-auto mt-2 block w-full select-none rounded-sm"
+            style={{
+              maxWidth: 480,
+              aspectRatio: "2 / 1",
+              imageRendering: "pixelated",
+              backgroundColor: "var(--paper)",
+              border: "1px dashed var(--grid-line)",
+            }}
             aria-hidden="true"
           />
         </div>
       ) : (
-        <p className="mt-2 text-[10px] uppercase tracking-wide text-ink opacity-50">
+        <p className="mt-3 text-xs text-[color:var(--ink-muted)]">
           نصّك في الكونفاس
         </p>
       )}
@@ -319,10 +324,16 @@ export default function PassDoodleCanvas({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        className="mt-2 block w-full touch-none select-none border border-ink bg-bg"
-        style={{ aspectRatio: "2 / 1", imageRendering: "pixelated" }}
+        className="mx-auto mt-3 block w-full touch-none select-none rounded-sm"
+        style={{
+          maxWidth: 480,
+          aspectRatio: "2 / 1",
+          imageRendering: "pixelated",
+          backgroundColor: "var(--paper)",
+          border: "1px solid var(--grid-line)",
+        }}
       />
-      <p className="mt-1 text-[10px] text-ink opacity-60">{drawHint}</p>
+      <p className="mt-2 text-xs text-[color:var(--ink-faint)]">{drawHint}</p>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { CapsuleFeedItem } from "@/lib/feed";
 import { doodleBmpDataUri } from "@/lib/capsule";
 import PeelOffButton from "@/app/components/PeelOffButton";
@@ -19,11 +20,31 @@ function stripUrls(text: string | null): string {
     .trim();
 }
 
-function CardFooter({ capsule }: { capsule: CapsuleFeedItem }) {
+/** Deterministic hand-pinned tilt: stable per capsule, varied across the board. */
+const TILT_CLASSES = ["pin-tilt-l", "pin-tilt-r", "pin-tilt-l2", "pin-tilt-r2"] as const;
+
+function tiltFor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  }
+  return TILT_CLASSES[Math.abs(hash) % 4];
+}
+
+function CardFooter({
+  capsule,
+  tone,
+}: {
+  capsule: CapsuleFeedItem;
+  tone: "sticky" | "paper";
+}) {
   if (!capsule.authorAlias && !capsule.createdAt) return null;
   return (
     <footer className="mt-3 flex items-center justify-between">
-      <span className="text-xs italic text-ink opacity-60">
+      <span
+        className="text-xs italic"
+        style={{ color: tone === "sticky" ? "var(--sticky-ink)" : "var(--ink-muted)" }}
+      >
         {capsule.authorAlias ? `— ${capsule.authorAlias}` : ""}
       </span>
       <span className="flex items-center gap-3">
@@ -37,7 +58,8 @@ function CardFooter({ capsule }: { capsule: CapsuleFeedItem }) {
         />
         <time
           dateTime={capsule.createdAt.toISOString()}
-          className="text-xs text-ink opacity-40"
+          className="text-xs"
+          style={{ color: "var(--ink-faint)" }}
         >
           {DATE_FORMAT.format(capsule.createdAt)}
         </time>
@@ -49,8 +71,9 @@ function CardFooter({ capsule }: { capsule: CapsuleFeedItem }) {
 function TextBody({ capsule }: { capsule: CapsuleFeedItem }) {
   const text = stripUrls(capsule.textContent);
   if (!text) return null;
+  // Color is inherited: --sticky-ink on the sticky note, --ink elsewhere.
   return (
-    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink">
+    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
       {text}
     </p>
   );
@@ -63,8 +86,8 @@ function DoodleBody({ capsule }: { capsule: CapsuleFeedItem }) {
     <img
       src={capsule.doodleData}
       alt={`رسمة بكسل${capsule.authorAlias ? ` للـ ${capsule.authorAlias}` : ""}`}
-      className="w-full rounded"
-      style={{ imageRendering: "pixelated", border: "1px solid var(--grid-line)" }}
+      className="w-full"
+      style={{ imageRendering: "pixelated" }}
       width={128}
       height={64}
       loading="lazy"
@@ -93,12 +116,12 @@ function CassetteBody({ capsule }: { capsule: CapsuleFeedItem }) {
         >
           📼
         </span>
-        <p className="text-sm leading-relaxed text-ink">
+        <p className="text-sm leading-relaxed">
           {meta?.title ? (
             <>
               <span className="font-semibold">{meta.title}</span>
               {meta.artist && (
-                <span className="opacity-70"> · {meta.artist}</span>
+                <span style={{ color: "var(--ink-muted)" }}> · {meta.artist}</span>
               )}
             </>
           ) : domain ? (
@@ -122,7 +145,10 @@ function CassetteBody({ capsule }: { capsule: CapsuleFeedItem }) {
           loading="lazy"
         />
       ) : null}
-      <p className="mt-1 text-[10px] uppercase tracking-wide text-ink opacity-50">
+      <p
+        className="mt-1 text-xs uppercase tracking-wide"
+        style={{ color: "var(--ink-faint)" }}
+      >
         كاسيت المكتب · أغنية مقترحة
       </p>
     </div>
@@ -148,8 +174,8 @@ function PassDoodleBody({ capsule }: { capsule: CapsuleFeedItem }) {
       <img
         src={src}
         alt={`رسمة جماعية بكسل${capsule.authorAlias ? ` للـ ${capsule.authorAlias}` : ""}`}
-        className="w-full rounded"
-        style={{ imageRendering: "pixelated", border: "1px solid var(--grid-line)" }}
+        className="w-full"
+        style={{ imageRendering: "pixelated" }}
         width={128}
         height={64}
         loading="lazy"
@@ -185,18 +211,33 @@ function bodyFor(capsule: CapsuleFeedItem) {
   }
 }
 
+/** Corkboard signature: each capsule type is a different pinned paper. */
+function surfaceFor(capsule: CapsuleFeedItem): { className: string; style: CSSProperties } {
+  switch (capsule.type) {
+    case "TEXT":
+      // Sticky note: yellow paper, sticky-ink text, no inner border.
+      return { className: "sticky-note", style: { padding: "var(--space-4)" } };
+    case "DOODLE":
+    case "PASS_DOODLE":
+      // Polaroid: white frame with a wider bottom margin for the caption.
+      return { className: "polaroid", style: {} };
+    default:
+      // CASSETTE + opened SEALED: liner-note card.
+      return { className: "card", style: { padding: "var(--space-4)" } };
+  }
+}
+
 export default function CapsuleCard({ capsule }: { capsule: CapsuleFeedItem }) {
+  const surface = surfaceFor(capsule);
+  const tone = capsule.type === "TEXT" ? "sticky" : "paper";
   return (
     <article
-      className="rounded-lg border p-4 shadow-sm"
-      style={{
-        borderColor: "var(--grid-line)",
-        backgroundColor: "var(--bg)",
-        boxShadow: "2px 3px 0 rgba(26, 23, 20, 0.06)",
-      }}
+      className={`card-pinned ${surface.className} ${tiltFor(capsule.id)}`}
+      style={surface.style}
     >
+      <div className="pushpin" aria-hidden="true" />
       {bodyFor(capsule)}
-      <CardFooter capsule={capsule} />
+      <CardFooter capsule={capsule} tone={tone} />
     </article>
   );
 }

@@ -32,7 +32,7 @@ export default function DeskInteraction({ deskId }: { deskId: string }) {
   );
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-[var(--space-4)]">
       <FocusTimer deskId={deskId} onSessionComplete={setSigningToken} />
       {signingToken ? (
         <ArtifactComposer
