@@ -34,6 +34,13 @@ export default function Corkboard({
 
   return (
     <section aria-label="لوحة الفلين بتاعة المكتب">
+      <div
+        className="mb-3 flex items-center gap-2 text-sm font-semibold"
+        style={{ color: "var(--ink-muted)" }}
+      >
+        <span aria-hidden="true">💌</span>
+        <span>آخر رسالة من اللي قعد قبلك</span>
+      </div>
       {sealedPendingCount > 0 && (
         <p
           className="mb-4 px-4 py-3"
@@ -50,9 +57,9 @@ export default function Corkboard({
         </p>
       )}
       <ul className="columns-1 gap-4 sm:columns-2">
-        {capsules.map((capsule) => (
+        {capsules.map((capsule, index) => (
           <li key={capsule.id} className="mb-4 break-inside-avoid">
-            <CapsuleCard capsule={capsule} />
+            <CapsuleCard capsule={capsule} featured={index === 0} />
           </li>
         ))}
       </ul>

@@ -37,6 +37,7 @@ model Capsule {
   trackMetadata Json?         @map("track_metadata")
   isSealed      Boolean       @default(false) @map("is_sealed")
   isOpened      Boolean       @default(false) @map("is_opened")
+  openedByDeviceHash String?  @map("opened_by_device_hash")
   reportCount   Int           @default(0) @map("report_count")
   status        CapsuleStatus @default(PUBLISHED)
   deviceHash    String        @map("device_hash")

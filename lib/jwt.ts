@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { SIGNING_TOKEN_TTL } from "@/lib/focus";
 
 export interface SessionPayload {
   deskId: string;
@@ -13,7 +14,10 @@ function getSecret(): string {
 }
 
 export function signSession(payload: SessionPayload): string {
-  return jwt.sign(payload, getSecret(), { algorithm: "HS256", expiresIn: "24h" });
+  return jwt.sign(payload, getSecret(), {
+    algorithm: "HS256",
+    expiresIn: SIGNING_TOKEN_TTL,
+  });
 }
 
 export function verifySession(token: string): SessionPayload | null {

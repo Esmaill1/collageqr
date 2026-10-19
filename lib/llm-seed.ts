@@ -25,7 +25,7 @@ function buildPrompt(count: number): string {
 const SAFETY_PROMPT =
   "أنت بتولّد محتوى لطيف وودود لتطبيق مذاكرة لطلبة جامعة. رجّع بس مصفوفة JSON الصارمة اللي اتطلبت. كل ملاحظة أقصى 160 حرف وباللهجة المصرية الجامعية، نص عادي، بدون روابط، بدون كلام بذيء، وبدون أسماء حقيقية.";
 
-const FALLBACK_POOL: SeedNote[] = [
+export const FALLBACK_POOL: SeedNote[] = [
   { text: "نوّرت يا صاحبي. خدها فقرة فقرة وهتخلص بإذن الله.", alias: "مجهول" },
   { text: "التكييف هنا بيجمّد. هات بلوظ.", alias: "كبير جامدة" },
   { text: "أحسن ترابيزة في الدور ده. متقولش لحد.", alias: "حارس B14" },
@@ -71,6 +71,9 @@ export const SEALED_POOL: string[] = [
   "تحذير: المحتويات ممكن تعمل إحساس مايتحكمش فيه بإنك 'هتقدر'.",
   "سيبت حاجة للي كان محتاجها أكتر. يا رب دي تكون انت.",
 ];
+
+/** Compatibility export for older scripts; pilot seeding is fully local. */
+export const PILOT_SEALED_POOL = SEALED_POOL;
 
 // Deterministic-enough shuffle for seed variety.
 function shuffle<T>(arr: T[]): T[] {
@@ -275,5 +278,3 @@ export function generateProceduralDoodle(kind: DoodleKind): string {
   }
   return toBase64(buf);
 }
-
-

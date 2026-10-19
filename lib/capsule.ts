@@ -2,10 +2,13 @@ import { Prisma } from "@prisma/client";
 import type { FocusSession } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { verifySession, type SessionPayload } from "@/lib/jwt";
-import { stripUrls } from "@/lib/text";
-import { fetchTrackMetadata, isValidTrackUrl } from "@/lib/opengraph";
+import {
+  NOTE_MAX_CHARS,
+  normalizeNoteText,
+  stripUrls,
+} from "@/lib/text";
 
-export const TEXT_MAX_CHARS = 160;
+export const TEXT_MAX_CHARS = NOTE_MAX_CHARS;
 export const ALIAS_MAX_CHARS = 40;
 // Raw 1-bit mask for 128x64 = 1024 bytes; base64 of 2048 raw bytes ≈ 2732 chars.
 export const DOODLE_MAX_BYTES = 2048;
@@ -200,82 +203,40 @@ function buildDoodleBmpDataUri(doodleData: string): string {
  *   5. transactionally: flip tokenUsed=true FIRST, then create the capsule,
  *      so two concurrent submits with the same token cannot both succeed.
  *
- * P1 formats (PRD §3.3):
- *   - trackUrl present   → type CASSETTE; OpenGraph metadata fetched
- *     server-side (best-effort, non-blocking failure) and stored as
- *     trackMetadata JSON. The OpenGraph fetch happens AFTER token
- *     verification (so unauthenticated callers cannot trigger outbound
- *     fetches) but BEFORE the DB transaction so a slow provider never
- *     extends that transaction.
- *   - isSealed true      → type SEALED, isSealed=true; requires a text note.
- *     Hidden from the public feed (getDeskFeed filters it) and claimed by
- *     the next unique device via app/api/capsules/[id]/route.ts.
- *   - isPassDoodle true  → type PASS_DOODLE (highest precedence), created as
- *     a PARENT (passParentId=null) whose doodleData must be a full 128x64
- *     bitmask drawing ONLY the top half (rows 32–63 blank). Hidden from the
- *     feed until continued; surfaced via getPendingPassDoodle.
+ * Pilot formats (PRD §3.3):
+ *   - isSealed false → type TEXT, a public message for the next occupant.
+ *   - isSealed true  → type SEALED, a text message hidden from the public
+ *     feed and claimable by the next unique device.
+ *
+ * Doodles, cassette tracks, and pass-doodles remain dormant schema values for
+ * a later product experiment; the pilot API rejects them before this helper
+ * is called.
  */
 export async function createCapsule(input: {
   sessionToken: string;
   textContent?: string;
-  doodleData?: string;
   authorAlias?: string;
-  trackUrl?: string;
   isSealed?: boolean;
-  isPassDoodle?: boolean;
   deviceHash: string;
 }): Promise<CreateCapsuleResult> {
   const { sessionToken, deviceHash } = input;
 
   const textRaw = typeof input.textContent === "string" ? input.textContent : "";
-  const doodleData = typeof input.doodleData === "string" ? input.doodleData : "";
   const aliasRaw = typeof input.authorAlias === "string" ? input.authorAlias : "";
-  const trackUrlRaw =
-    typeof input.trackUrl === "string" ? input.trackUrl.trim() : "";
   const isSealed = input.isSealed === true;
-  const isPassDoodle = input.isPassDoodle === true;
 
-  const text = textRaw ? stripUrls(textRaw).slice(0, TEXT_MAX_CHARS) : "";
+  const text = textRaw ? normalizeNoteText(textRaw) : "";
   const alias = aliasRaw ? aliasRaw.trim().slice(0, ALIAS_MAX_CHARS) : null;
 
-  if (textRaw.length > TEXT_MAX_CHARS * 4) return { ok: false, error: "text-too-long" };
-  if (doodleData && !isValidDoodleData(doodleData)) return { ok: false, error: "doodle-too-large" };
+  if (text.length > TEXT_MAX_CHARS) return { ok: false, error: "text-too-long" };
   if (aliasRaw.length > ALIAS_MAX_CHARS) return { ok: false, error: "alias-too-long" };
 
-  // Sealed envelopes are private hand-me-downs: a written note is required
-  // (a standalone doodle can be pinned publicly instead).
+  // Sealed envelopes are private hand-me-downs: a written note is required.
   if (isSealed && !text) return { ok: false, error: "empty-capsule" };
 
-  // Pass-doodle parents are images only: no text/trackUrl mixing, and the
-  // merged canvas later requires an exact full bitmask with a blank bottom.
-  if (isPassDoodle && (!doodleData || text || trackUrlRaw)) {
-    return { ok: false, error: "empty-capsule" };
-  }
-  if (isPassDoodle && !isTopHalfOnly(doodleData)) {
-    return { ok: false, error: "invalid-request" };
-  }
+  if (!text) return { ok: false, error: "empty-capsule" };
 
-  // Type resolution (PRD §3.3): pass-doodle parent > sealed > cassette >
-  // wrapped doodle > text.
-  const type: "TEXT" | "DOODLE" | "CASSETTE" | "SEALED" | "PASS_DOODLE" = isPassDoodle
-    ? "PASS_DOODLE"
-    : isSealed
-      ? "SEALED"
-      : trackUrlRaw
-        ? "CASSETTE"
-        : doodleData
-          ? "DOODLE"
-          : "TEXT";
-
-  // Wrapped doodles (and any doodle riding a sealed note) must be exactly
-  // one 128x64 bitmask: the renderer decodes a full 1024-byte mask, never a
-  // partial payload. PASS_DOODLE parents are already validated with
-  // isTopHalfOnly (which itself implies isFullBitmask).
-  if ((type === "DOODLE" || type === "SEALED") && doodleData && !isFullBitmask(doodleData)) {
-    return { ok: false, error: "doodle-too-large" };
-  }
-
-  if (!text && !doodleData && !trackUrlRaw) return { ok: false, error: "empty-capsule" };
+  const type = isSealed ? "SEALED" : "TEXT";
 
   const payload = verifySession(sessionToken);
   if (!payload) return { ok: false, error: "invalid-token" };
@@ -286,21 +247,6 @@ export async function createCapsule(input: {
   if (!session) return { ok: false, error: "session-not-found" };
   // Effort wall: the session must be completed server-side before anything ships.
   if (!session.completedAt) return { ok: false, error: "session-not-completed" };
-
-  // OpenGraph metadata fetch happens only after the signing token is
-  // verified and the payload checks pass (SSRF ordering guard: unauthenticated
-  // callers can no longer trigger the outbound fetch), and stays OUTSIDE the
-  // DB transaction so a slow provider never extends the transaction.
-  let trackMetadata: TrackMetadataJson | null = null;
-  if (trackUrlRaw) {
-    if (!isValidTrackUrl(trackUrlRaw)) return { ok: false, error: "invalid-request" };
-    const meta = await fetchTrackMetadata(trackUrlRaw);
-    trackMetadata = {
-      title: meta.title ?? null,
-      artist: meta.artist ?? null,
-      imageUrl: meta.imageUrl ?? null,
-    };
-  }
 
   const tokenResult = await prisma.$transaction(async (tx) => {
     // Consume first (guarded update), create second — both in one transaction.
@@ -319,11 +265,7 @@ export async function createCapsule(input: {
         type,
         authorAlias: alias || null,
         textContent: text || null,
-        doodleData: doodleData || null,
-        trackUrl: trackUrlRaw || null,
-        trackMetadata: trackMetadata
-          ? ({ ...trackMetadata } as Prisma.InputJsonValue)
-          : Prisma.JsonNull,
+        trackMetadata: Prisma.JsonNull,
         isSealed,
         status: "PUBLISHED",
         deviceHash,

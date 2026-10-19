@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { FOCUS_DURATION_MS } from "@/lib/focus";
 import { signSession } from "@/lib/jwt";
 import { applyDeviceCookie, getDeviceContext } from "@/lib/device";
-
-const SESSION_DURATION_MS = 20 * 60 * 1000;
 
 export async function POST(request: Request) {
   // Cookie bootstrap (finding #7): this is the most common first POST a
@@ -55,7 +54,7 @@ export async function POST(request: Request) {
       sessionToken,
       sessionId: session.id,
       startedAt,
-      durationMs: SESSION_DURATION_MS,
+      durationMs: FOCUS_DURATION_MS,
     },
     201,
   );

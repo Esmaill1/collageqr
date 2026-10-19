@@ -13,7 +13,13 @@ import ArtifactComposer, {
  * completes and hands back a signing token, the ArtifactComposer appears
  * below it and is consumed by publishing a capsule (or cancelling).
  */
-export default function DeskInteraction({ deskId }: { deskId: string }) {
+export default function DeskInteraction({
+  deskId,
+  prompt,
+}: {
+  deskId: string;
+  prompt: string;
+}) {
   const router = useRouter();
   const [signingToken, setSigningToken] = useState<string | null>(null);
 
@@ -33,10 +39,16 @@ export default function DeskInteraction({ deskId }: { deskId: string }) {
 
   return (
     <div className="flex flex-col gap-[var(--space-4)]">
-      <FocusTimer deskId={deskId} onSessionComplete={setSigningToken} />
+      <FocusTimer
+        deskId={deskId}
+        prompt={prompt}
+        onSessionStarted={() => router.refresh()}
+        onSessionComplete={setSigningToken}
+      />
       {signingToken ? (
         <ArtifactComposer
           deskId={deskId}
+          prompt={prompt}
           signingToken={signingToken}
           onPublished={handlePublished}
           onCancel={() => setSigningToken(null)}

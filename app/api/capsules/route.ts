@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createCapsule, type CapsuleError } from "@/lib/capsule";
 import { applyDeviceCookie, getDeviceContext } from "@/lib/device";
+import { hasDeferredCapsuleFields } from "@/lib/pilot";
 
 export const dynamic = "force-dynamic";
 
@@ -30,17 +31,25 @@ export async function POST(request: Request) {
     return res({ error: "invalid-request" }, 400);
   }
 
-  if ( typeof body !== "object" || body === null) {
+  if (typeof body !== "object" || body === null) {
     return res({ error: "invalid-request" }, 400);
   }
-  const { sessionToken, textContent, doodleData, authorAlias, trackUrl, isSealed, isPassDoodle } =
+  const {
+    sessionToken,
+    textContent,
+    authorAlias,
+    isSealed,
+    doodleData,
+    trackUrl,
+    isPassDoodle,
+  } =
     body as {
       sessionToken?: unknown;
       textContent?: unknown;
-      doodleData?: unknown;
       authorAlias?: unknown;
-      trackUrl?: unknown;
       isSealed?: unknown;
+      doodleData?: unknown;
+      trackUrl?: unknown;
       isPassDoodle?: unknown;
     };
 
@@ -48,14 +57,18 @@ export async function POST(request: Request) {
     return res({ error: "invalid-token" }, 401);
   }
 
+  // The pilot deliberately accepts only text and sealed text notes. Keep the
+  // future fields in the database, but do not let a caller bypass the reduced
+  // UI and publish deferred formats directly.
+  if (hasDeferredCapsuleFields({ doodleData, trackUrl, isPassDoodle })) {
+    return res({ error: "invalid-request" }, 400);
+  }
+
   const result = await createCapsule({
     sessionToken,
     textContent: typeof textContent === "string" ? textContent : undefined,
-    doodleData: typeof doodleData === "string" ? doodleData : undefined,
     authorAlias: typeof authorAlias === "string" ? authorAlias : undefined,
-    trackUrl: typeof trackUrl === "string" ? trackUrl : undefined,
     isSealed: isSealed === true ? true : undefined,
-    isPassDoodle: isPassDoodle === true ? true : undefined,
     deviceHash: device.deviceHash,
   });
 

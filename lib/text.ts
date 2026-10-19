@@ -1,3 +1,5 @@
+export const NOTE_MAX_CHARS = 160;
+
 /**
  * Canonical text normalization shared by server and client (PRD §4):
  *
@@ -14,4 +16,15 @@ export function stripUrls(text: string): string {
     .replace(/(^|\s)www\.\S+/gi, "$1")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+export function normalizeNoteText(text: string): string {
+  return stripUrls(text);
+}
+
+export function noteTextError(text: string): "empty" | "too-long" | null {
+  const normalized = normalizeNoteText(text);
+  if (normalized.length === 0) return "empty";
+  if (normalized.length > NOTE_MAX_CHARS) return "too-long";
+  return null;
 }

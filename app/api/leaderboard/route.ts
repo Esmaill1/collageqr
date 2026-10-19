@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getWeeklyLeaderboard } from "@/lib/leaderboard";
 
-export const dynamic = "force-dynamic";
-
-export async function GET() {
-  const desks = await getWeeklyLeaderboard();
-  return NextResponse.json({ ok: true, desks });
+/** Public competition is intentionally deferred beyond the first pilot. */
+export function GET() {
+  return NextResponse.json(
+    { error: "pilot-feature-disabled", feature: "leaderboard" },
+    { status: 410 },
+  );
 }

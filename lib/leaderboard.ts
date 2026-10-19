@@ -1,15 +1,16 @@
 import { prisma } from "@/lib/db";
 import { levelLabel } from "@/lib/desk";
+import { FOCUS_MINUTES } from "@/lib/focus";
 
 /**
  * Library leaderboard (PRD §3.4 P1): Top 10 most active desks THIS WEEK.
  *
- * A completed focus session is always a 20-minute session, so weekly
- * minutes = 20 × completed sessions in the last 7 days. Weakly-active
+ * A completed focus session is always a 10-minute session, so weekly
+ * minutes = 10 × completed sessions in the last 7 days. Weakly-active
  * desks (0 weekly minutes) can still fill remaining slots, ranked by
  * all-time minutes, so a young library still shows a full board.
  */
-export const SESSION_MINUTES = 20;
+export const SESSION_MINUTES = FOCUS_MINUTES;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const LIMIT = 10;
 const POOL_SIZE = 40;

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import type { Desk } from "@prisma/client";
 
-/** OpenGraph-ish metadata for a cassette capsule (JSONB in DB). */
+/** Metadata kept for dormant future artifact types. */
 export interface TrackMetadata {
   title?: string | null;
   artist?: string | null;
@@ -25,26 +25,6 @@ export interface CapsuleFeedItem {
 }
 
 /**
- * One half-doodle waiting for the next artist (PRD §3.3 P2). The parent's
- * doodleData is only a TOP HALF (rows 0–31) — never rendered in the feed;
- * it is offered to the next occupant via the composer's pass-doodle tab.
- */
-export interface PendingPassDoodleItem {
-  id: string;
-  doodleData: string;
-}
-
-/**
- * A pass-doodle PARENT: type PASS_DOODLE with passParentId=null. Parents,
- * whether still pending or already completed by a child, never sit in the
- * feed themselves — the CHILD (passParentId=parent.id) is what publishes.
- */
-const passDoodleParentFilter = {
-  type: "PASS_DOODLE" as const,
-  passParentId: null,
-};
-
-/**
  * A pending sealed envelope claimable by the current device. Content is
  * deliberately omitted — it must be unlocked with the atomic claim call
  * (PATCH /api/capsules/[id] { action: "open" }), never SSR'd into HTML.
@@ -59,7 +39,6 @@ export interface DeskFeedResult {
   capsules: CapsuleFeedItem[];
   sealedPendingCount: number;
   claimableSealed: ClaimableSealedItem | null;
-  pendingPassDoodle: PendingPassDoodleItem | null;
 }
 
 /**
@@ -110,29 +89,6 @@ function toFeedItem(c: {
 }
 
 /**
- * The newest pass-doodle PARENT for a desk that is still pending —
- * published, and with no child capsule yet (passChildren none). Returns
- * { id, doodleData } so the composer can offer it to the next occupant,
- * or null when nothing is waiting.
- */
-export async function getPendingPassDoodle(
-  deskId: string,
-): Promise<PendingPassDoodleItem | null> {
-  const parent = await prisma.capsule.findFirst({
-    where: {
-      deskId,
-      status: "PUBLISHED",
-      ...passDoodleParentFilter,
-      passChildren: { none: {} },
-    },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, doodleData: true },
-  });
-  if (!parent || !parent.doodleData) return null;
-  return { id: parent.id, doodleData: parent.doodleData };
-}
-
-/**
  * Load a desk + its published corkboard feed in a single call, sized for
  * SSR (<1.2s target). Every sealed capsule stays out of the feed —
  * including opened-but-never-pinned ones whose secret content is still
@@ -157,7 +113,6 @@ export async function getDeskFeed(
     capsules: [],
     sealedPendingCount: 0,
     claimableSealed: null,
-    pendingPassDoodle: null,
   };
 
   const desk = await prisma.desk.findUnique({
@@ -176,18 +131,20 @@ export async function getDeskFeed(
   const pendingSealedWhere = {
     deskId,
     status: "PUBLISHED" as const,
+    type: "SEALED" as const,
     ...sealedFilter,
   };
 
-  const [capsules, sealedPendingCount, pendingPassDoodle, claimable] = await Promise.all([
+  const [capsules, sealedPendingCount, claimable] = await Promise.all([
     prisma.capsule.findMany({
       where: {
         deskId,
         status: "PUBLISHED",
+        type: { in: ["TEXT", "SEALED"] },
         // Exclude on isSealed alone: an OPENED sealed envelope whose secret
         // content is still unpublished must not leak to the public feed
         // either. Pinning (the only public path) explicitly unseals it.
-        NOT: [{ isSealed: true }, passDoodleParentFilter],
+        NOT: [{ isSealed: true }],
       },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -196,7 +153,6 @@ export async function getDeskFeed(
     prisma.capsule.count({
       where: pendingSealedWhere,
     }),
-    getPendingPassDoodle(deskId),
     // Claimable envelope: only for devices with an established cookie
     // identity. Pending sealed, authored by someone else, newest wins.
     device && device.hasIdentity
@@ -213,6 +169,5 @@ export async function getDeskFeed(
     capsules: capsules.map(toFeedItem),
     sealedPendingCount,
     claimableSealed: claimable ? { id: claimable.id, createdAt: claimable.createdAt } : null,
-    pendingPassDoodle,
   };
 }

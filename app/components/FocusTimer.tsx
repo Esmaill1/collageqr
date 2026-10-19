@@ -6,15 +6,17 @@ import {
   useRef,
   useState,
 } from "react";
-
-const SESSION_MS = 20 * 60 * 1000;
-const GRACE_MS = 10 * 1000;
+import {
+  FOCUS_DURATION_MS,
+  FOCUS_GRACE_MS,
+} from "@/lib/focus";
 
 type Phase = "idle" | "running" | "left" | "paused" | "completed" | "error";
 
 interface StoredSession {
   sessionToken: string;
   virtualStart: number;
+  durationMs: number;
 }
 
 interface CompleteResponse {
@@ -125,12 +127,16 @@ function ProgressRing({
 export default function FocusTimer({
   deskId,
   onSessionComplete,
+  onSessionStarted,
+  prompt,
 }: {
   deskId: string;
   onSessionComplete: (signingToken: string) => void;
+  onSessionStarted?: () => void;
+  prompt?: string;
 }) {
   const [phase, setPhase] = useState<Phase>("idle");
-  const [remainingMs, setRemainingMs] = useState(SESSION_MS);
+  const [remainingMs, setRemainingMs] = useState(FOCUS_DURATION_MS);
   const [graceLeftMs, setGraceLeftMs] = useState<number | null>(null);
   const [errorHint, setErrorHint] = useState("");
   const [canRetry, setCanRetry] = useState(false);
@@ -201,7 +207,7 @@ export default function FocusTimer({
   // Begin a fresh focus session: POST /api/sessions/start, persist the returned
   // token + server-authoritative startedAt (virtualStart), grab the wake lock,
   // and enter the running phase. Uses startedAt from the server so client clock
-  // skew can't drift the 20-minute window the server later verifies (≥19m30s).
+  // skew can't drift the ten-minute window the server later verifies.
   const start = useCallback(async () => {
     if (startingRef.current) return;
     startingRef.current = true;
@@ -220,15 +226,21 @@ export default function FocusTimer({
         typeof data.sessionToken === "string" &&
         typeof data.startedAt === "number"
       ) {
+        const durationMs =
+          typeof data.durationMs === "number" && data.durationMs > 0
+            ? data.durationMs
+            : FOCUS_DURATION_MS;
         const session: StoredSession = {
           sessionToken: data.sessionToken,
           virtualStart: data.startedAt,
+          durationMs,
         };
         sessionRef.current = session;
         persistSession(session);
-        setRemainingMs(SESSION_MS);
+        setRemainingMs(durationMs);
         void requestWakeLock();
         updatePhase("running");
+        onSessionStarted?.();
         return;
       }
 
@@ -248,7 +260,7 @@ export default function FocusTimer({
     } finally {
       startingRef.current = false;
     }
-  }, [deskId, persistSession, requestWakeLock, updatePhase]);
+  }, [deskId, onSessionStarted, persistSession, requestWakeLock, updatePhase]);
 
   const completeSession = useCallback(
     async (session: StoredSession) => {
@@ -279,9 +291,9 @@ export default function FocusTimer({
         setCanRetry(false);
         setErrorHint(
           data.error === "session-too-short"
-            ? "مستعجل كده؟ الترابيزة دي بتحسب بس جلسات 20 دقيقة كاملة. المرة الجاية شوف بوست تاني."
+            ? "مستعجل كده؟ الترابيزة دي بتحسب بس جلسات 10 دقايق كاملة. المرة الجاية شوف بوست تاني."
             : data.error === "invalid-or-expired-token"
-              ? "سجل الجلسة اختفى — ابدأ جلسة 20 دقيقة جديدة عشان توقّع على الترابيزة دي."
+              ? "سجل الجلسة اختفى — ابدأ جلسة 10 دقايق جديدة عشان تسيب رسالة للترابيزة دي."
               : "جلسة التركيز مقدرتش تخلص. حاول تاني.",
         );
         updatePhase("error");
@@ -306,7 +318,14 @@ export default function FocusTimer({
           typeof parsed.sessionToken === "string" &&
           typeof parsed.virtualStart === "number"
         ) {
-          stored = { sessionToken: parsed.sessionToken, virtualStart: parsed.virtualStart };
+          stored = {
+            sessionToken: parsed.sessionToken,
+            virtualStart: parsed.virtualStart,
+            durationMs:
+              typeof parsed.durationMs === "number" && parsed.durationMs > 0
+                ? parsed.durationMs
+                : FOCUS_DURATION_MS,
+          };
         } else {
           localStorage.removeItem(storageKey);
         }
@@ -333,7 +352,7 @@ export default function FocusTimer({
     const tick = () => {
       const session = sessionRef.current;
       if (!session) return;
-      const remaining = session.virtualStart + SESSION_MS - Date.now();
+      const remaining = session.virtualStart + session.durationMs - Date.now();
       if (remaining <= 0) {
         setRemainingMs(0);
         void completeSession(session);
@@ -369,7 +388,9 @@ export default function FocusTimer({
     const resumeFromPaused = () => {
       const session = sessionRef.current;
       if (!session) return;
-      session.virtualStart = Date.now() + pausedRemainingRef.current - SESSION_MS;
+      session.virtualStart =
+        Date.now() + pausedRemainingRef.current - session.durationMs;
+      persistSession(session);
       resumeRun();
     };
 
@@ -387,7 +408,7 @@ export default function FocusTimer({
       if (!session) return;
 
       updatePhase("left");
-      setGraceLeftMs(GRACE_MS);
+      setGraceLeftMs(FOCUS_GRACE_MS);
 
       graceTimeoutRef.current = setTimeout(() => {
         graceTimeoutRef.current = null;
@@ -395,7 +416,7 @@ export default function FocusTimer({
         if (phaseRef.current === "left") {
           const remainingAtPause = Math.max(
             0,
-            session.virtualStart + SESSION_MS - Date.now(),
+            session.virtualStart + session.durationMs - Date.now(),
           );
           pausedRemainingRef.current = remainingAtPause;
           if (remainingAtPause <= 0) {
@@ -404,7 +425,7 @@ export default function FocusTimer({
             updatePhase("paused");
           }
         }
-      }, GRACE_MS);
+      }, FOCUS_GRACE_MS);
     };
 
     const onVisibility = () => {
@@ -422,7 +443,7 @@ export default function FocusTimer({
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", onBackgrounded);
     };
-  }, [phase, requestWakeLock, completeSession, updatePhase]);
+  }, [phase, persistSession, requestWakeLock, completeSession, updatePhase]);
 
   const giveUp = useCallback(() => {
     completingRef.current = false;
@@ -430,14 +451,15 @@ export default function FocusTimer({
     persistSession(null);
     teardown();
     updatePhase("idle");
-    setRemainingMs(SESSION_MS);
+    setRemainingMs(FOCUS_DURATION_MS);
     setCanRetry(false);
     setErrorHint("");
   }, [persistSession, teardown, updatePhase]);
 
   const clock = formatClock(remainingMs);
-  const elapsedMs = Math.min(SESSION_MS, Math.max(0, SESSION_MS - remainingMs));
-  const dashOffset = RING_CIRCUMFERENCE * (1 - elapsedMs / SESSION_MS);
+  const durationMs = sessionRef.current?.durationMs ?? FOCUS_DURATION_MS;
+  const elapsedMs = Math.min(durationMs, Math.max(0, durationMs - remainingMs));
+  const dashOffset = RING_CIRCUMFERENCE * (1 - elapsedMs / durationMs);
 
   if (phase === "completed") {
     return (
@@ -448,7 +470,7 @@ export default function FocusTimer({
           className="text-center font-bold"
           style={{ fontSize: "var(--text-lg)", color: "var(--accent)" }}
         >
-          +20 XP للترابيزة دي.
+          10 دقايق تركيز اتضافوا للترابيزة دي.
         </p>
         <p
           className="text-center"
@@ -528,8 +550,16 @@ export default function FocusTimer({
           className="text-center font-bold"
           style={{ fontSize: "var(--text-lg)", color: "var(--ink)" }}
         >
-          خلّص 20 دقيقة عشان توقّع على ترابيزة {deskId}.
+          خلّص 10 دقايق عشان تسيب رسالة للي هيقعد هنا بعدك.
         </p>
+        {prompt ? (
+          <p
+            className="text-center text-sm"
+            style={{ color: "var(--ink-muted)" }}
+          >
+            سؤال الترابيزة: {prompt}
+          </p>
+        ) : null}
         <button
           type="button"
           onClick={() => void start()}
@@ -542,7 +572,7 @@ export default function FocusTimer({
           className="text-center"
           style={{ fontSize: "var(--text-sm)", color: "var(--ink-muted)" }}
         >
-          سيب التبويبة ده عشان المؤقت يقف.
+          سيب التبويبة دي عشان المؤقت يقف.
         </p>
       </section>
     );
@@ -574,7 +604,7 @@ export default function FocusTimer({
         className="text-center"
         style={{ fontSize: "var(--text-sm)", color: "var(--ink-muted)" }}
       >
-        سيب التبويبة ده عشان المؤقت يقف.
+        سيب التبويبة دي عشان المؤقت يقف.
       </p>
       <button type="button" onClick={giveUp} className="btn btn-ghost btn-sm">
         سيبها

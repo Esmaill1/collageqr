@@ -227,13 +227,28 @@ function surfaceFor(capsule: CapsuleFeedItem): { className: string; style: CSSPr
   }
 }
 
-export default function CapsuleCard({ capsule }: { capsule: CapsuleFeedItem }) {
+export default function CapsuleCard({
+  capsule,
+  featured = false,
+}: {
+  capsule: CapsuleFeedItem;
+  featured?: boolean;
+}) {
   const surface = surfaceFor(capsule);
   const tone = capsule.type === "TEXT" ? "sticky" : "paper";
   return (
     <article
       className={`card-pinned ${surface.className} ${tiltFor(capsule.id)}`}
-      style={surface.style}
+      style={
+        featured
+          ? {
+              ...surface.style,
+              outline: "2px solid var(--accent)",
+              outlineOffset: "2px",
+              boxShadow: "var(--shadow-lift)",
+            }
+          : surface.style
+      }
     >
       <div className="pushpin" aria-hidden="true" />
       {bodyFor(capsule)}

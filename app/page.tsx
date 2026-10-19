@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import { getDeskFeed } from "@/lib/feed";
+import { getDeskPrompt } from "@/lib/prompts";
 import {
   getAnonymousDeviceHash,
   getDeviceHashFromCookies,
@@ -51,32 +51,20 @@ export default async function DeskPage({
               ? "الترابيزة دي لسه متسجلةش. اتأكد من الاستيكر على ترابيزتك وامسح تاني."
               : "دوّر على استيكر DeskLore على ترابيزة في المكتبة، امسح الـ QR، وافتح حيطة الترابيزة دي."}
           </p>
-          <Link href="/leaderboard" className="btn btn-ghost btn-block mt-6">
-            🏆 ترتيب الترابيزات
-          </Link>
         </div>
       </main>
     );
   }
 
+  const prompt = getDeskPrompt(feed.desk.id);
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col gap-8 px-4 pb-16 pt-6">
-      {/* Focus session → artifact flow: floating action bar at the top of
-          the screen (PRD §2), composer appears only after a session completes. */}
-      <DeskInteraction deskId={feed.desk.id} />
-
-      <DeskHeader desk={feed.desk} />
+      <DeskHeader desk={feed.desk} prompt={prompt} />
       <Corkboard capsules={feed.capsules} sealedPendingCount={feed.sealedPendingCount} />
 
-      <footer>
-        <Link
-          href="/leaderboard"
-          className="btn btn-ghost btn-block"
-          style={{ color: "var(--ink-muted)" }}
-        >
-          🏆 ترتيب الترابيزات — أكثر الترابيزات نشاط ده الأسبوع
-        </Link>
-      </footer>
+      {/* Read first, then commit to a short focus session and leave a message. */}
+      <DeskInteraction deskId={feed.desk.id} prompt={prompt} />
 
       {/* Wax-seal modal (PRD §3.3 P1): content is claimed client-side via
           app/api/capsules/[id], never SSR'd. */}

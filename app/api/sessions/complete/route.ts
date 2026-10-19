@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { FOCUS_MINUTES, MIN_FOCUS_MS } from "@/lib/focus";
 import { signSession, verifySession } from "@/lib/jwt";
 import { levelFromMinutes, levelLabel } from "@/lib/desk";
 
-const MIN_FOCUS_MS = 19 * 60 * 1000 + 30 * 1000;
-const XP_PER_SESSION = 20;
+const XP_PER_SESSION = FOCUS_MINUTES;
 
 export async function POST(request: Request) {
   let body: unknown;

@@ -4,7 +4,7 @@ export function buildDeskUrl(deskId: string, origin?: string): string {
 }
 
 function defaultOrigin(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || "https://desklore.vercel.app";
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 }
 
 export function defaultDeskIds(): string[] {

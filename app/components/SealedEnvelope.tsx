@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 
 interface ClaimedCapsule {
   textContent: string | null;
-  doodleData: string | null;
   authorAlias: string | null;
 }
 
@@ -47,7 +46,9 @@ export default function SealedEnvelope({
 
       if (!res.ok) {
         setError(
-          res.status === 409
+          res.status === 403
+            ? "الظرف ده اتفتح من جهاز تاني."
+            : res.status === 409
             ? "حد تاني فتح الظرف ده قبل كده."
             : `ختم الشمع مش عايز يفتح (${res.status}). حاول تاني.`,
         );
@@ -187,17 +188,6 @@ export default function SealedEnvelope({
                 (ملاحظة فاضية)
               </p>
             )}
-            {claimed?.doodleData ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={claimed.doodleData}
-                alt="رسمة بكسل جوّه المظروف"
-                className="mx-auto mt-3 w-full rounded"
-                style={{ imageRendering: "pixelated", border: "1px solid var(--grid-line)" }}
-                width={128}
-                height={64}
-              />
-            ) : null}
             {error ? (
               <p
                 className="mt-2 text-sm font-semibold"

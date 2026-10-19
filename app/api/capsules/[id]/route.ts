@@ -21,6 +21,7 @@ const CONTENT_SELECT = {
   trackMetadata: true,
   isSealed: true,
   isOpened: true,
+  openedByDeviceHash: true,
   reportCount: true,
   status: true,
   deviceHash: true,
@@ -55,11 +56,14 @@ async function loadCapsule(id: string) {
   });
 }
 
-function unauthorized(reason: "not-sealed" | "own-envelope", device: DeviceContext) {
+function unauthorized(
+  reason: "not-sealed" | "own-envelope" | "not-opener",
+  device: DeviceContext,
+) {
   return applyDeviceCookie(
     NextResponse.json(
       { error: reason },
-      { status: reason === "own-envelope" ? 403 : 400 },
+      { status: reason === "own-envelope" || reason === "not-opener" ? 403 : 400 },
     ),
     device,
   );
@@ -109,7 +113,7 @@ export async function PATCH(
     // Atomic claim: the guarded updateMany guarantees at most one winner.
     const claimed = await prisma.capsule.updateMany({
       where: { id, isSealed: true, isOpened: false },
-      data: { isOpened: true },
+      data: { isOpened: true, openedByDeviceHash: callerDeviceHash },
     });
     if (claimed.count !== 1) {
       return res({ error: "already-opened" }, 409);
@@ -124,8 +128,16 @@ export async function PATCH(
   if (!capsule.isOpened) {
     return res({ error: "not-opened" }, 409);
   }
+  if (capsule.openedByDeviceHash !== callerDeviceHash) {
+    return unauthorized("not-opener", device);
+  }
   const pinned = await prisma.capsule.updateMany({
-    where: { id, isSealed: true, isOpened: true },
+    where: {
+      id,
+      isSealed: true,
+      isOpened: true,
+      openedByDeviceHash: callerDeviceHash,
+    },
     data: { isSealed: false },
   });
   if (pinned.count !== 1) {
@@ -168,6 +180,9 @@ export async function DELETE(
   // secret the claimer never saw.
   if (!capsule.isOpened) {
     return res({ error: "not-opened" }, 409);
+  }
+  if (capsule.openedByDeviceHash !== callerDeviceHash) {
+    return unauthorized("not-opener", device);
   }
 
   // Clear reports first so the delete works even before the schema's
