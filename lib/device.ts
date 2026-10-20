@@ -53,10 +53,10 @@ function callerIp(requestHeaders: DeviceHeaderStore): string {
     .trim();
 }
 
-/** Same hashing scheme as before: sha256(ip|uuid).slice(0, 32). */
-export function deviceHashFor(ip: string, uuid: string): string {
+/** Stable browser identity: network changes must not create a new device. */
+export function deviceHashFor(_ip: string, uuid: string): string {
   return createHash("sha256")
-    .update(`${ip}|${uuid}`)
+    .update(`device|${uuid}`)
     .digest("hex")
     .slice(0, 32);
 }
@@ -64,22 +64,22 @@ export function deviceHashFor(ip: string, uuid: string): string {
 /**
  * Pure version: compute the device hash from the cookie store, minting a
  * fresh UUID when the cookie is absent (returned in `newCookie` so the
- * caller can set it on the response). IP comes from the request headers
- * (x-forwarded-for), exactly as before.
+ * caller can set it on the response). The request headers remain part of the
+ * function signature because the anonymous SSR fallback still uses the IP.
  */
 export function getDeviceHashFromCookies(
   cookieStore: DeviceCookieStore,
-  requestHeaders: DeviceHeaderStore,
+  _requestHeaders: DeviceHeaderStore,
 ): DeviceHashResult {
-  const ip = callerIp(requestHeaders);
+  void _requestHeaders;
   const uuid = cookieStore.get(DEVICE_COOKIE_NAME)?.value;
   if (uuid) {
-    return { hash: deviceHashFor(ip, uuid) };
+    return { hash: deviceHashFor("", uuid) };
   }
   // Mint-on-read: the minted UUID hashes to THIS request's identity and
   // is persisted via the response cookie for every future request.
   const minted = randomUUID();
-  return { hash: deviceHashFor(ip, minted), newCookie: minted };
+  return { hash: deviceHashFor("", minted), newCookie: minted };
 }
 
 /**

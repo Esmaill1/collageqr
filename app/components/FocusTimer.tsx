@@ -11,12 +11,23 @@ import {
   FOCUS_GRACE_MS,
 } from "@/lib/focus";
 
-type Phase = "idle" | "running" | "left" | "paused" | "completed" | "error";
+type Phase =
+  | "idle"
+  | "starting"
+  | "running"
+  | "left"
+  | "paused"
+  | "completing"
+  | "completed"
+  | "error";
 
 interface StoredSession {
   sessionToken: string;
   virtualStart: number;
   durationMs: number;
+  lifecycle?: "running" | "left" | "paused";
+  awayAt?: number;
+  pausedRemainingMs?: number;
 }
 
 interface CompleteResponse {
@@ -35,6 +46,7 @@ interface StartResponse {
   sessionToken: string;
   sessionId: string;
   startedAt: number;
+  serverNow: number;
   durationMs: number;
 }
 
@@ -74,7 +86,7 @@ function ProgressRing({
   return (
     <div
       role="timer"
-      aria-live="polite"
+      aria-live="off"
       aria-label={ariaLabel}
       className="relative flex items-center justify-center"
       style={{ width: 200, height: 200 }}
@@ -204,19 +216,23 @@ export default function FocusTimer({
     void releaseWakeLock();
   }, [clearGrace, releaseWakeLock]);
 
-  // Begin a fresh focus session: POST /api/sessions/start, persist the returned
-  // token + server-authoritative startedAt (virtualStart), grab the wake lock,
-  // and enter the running phase. Uses startedAt from the server so client clock
-  // skew can't drift the ten-minute window the server later verifies.
+  // Begin a fresh focus session: POST /api/sessions/start, convert the returned
+  // server timestamp into the client's clock domain, persist the token, grab
+  // the wake lock, and enter the running phase. The server remains authoritative
+  // when completion is accepted.
   const start = useCallback(async () => {
     if (startingRef.current) return;
     startingRef.current = true;
+    setErrorHint("");
+    updatePhase("starting");
     try {
+      const requestStartedAt = Date.now();
       const res = await fetch("/api/sessions/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deskId }),
       });
+      const responseReceivedAt = Date.now();
       const data = (await res.json()) as Partial<StartResponse> & {
         error?: string;
       };
@@ -230,10 +246,18 @@ export default function FocusTimer({
           typeof data.durationMs === "number" && data.durationMs > 0
             ? data.durationMs
             : FOCUS_DURATION_MS;
+        const serverNow =
+          typeof data.serverNow === "number" ? data.serverNow : data.startedAt;
+        const estimatedClientOffset =
+          serverNow - Math.round((requestStartedAt + responseReceivedAt) / 2);
         const session: StoredSession = {
           sessionToken: data.sessionToken,
-          virtualStart: data.startedAt,
+          // Convert the server timestamp to the client's clock domain. The
+          // completion endpoint remains authoritative; this only keeps the
+          // visible timer honest when device clocks differ.
+          virtualStart: data.startedAt - estimatedClientOffset,
           durationMs,
+          lifecycle: "running",
         };
         sessionRef.current = session;
         persistSession(session);
@@ -247,7 +271,7 @@ export default function FocusTimer({
       setCanRetry(false);
       setErrorHint(
         data.error === "desk-not-found"
-          ? "الترابيزة دي لسه مسجّلة. جرّب تلتقط الستيكر تاني."
+          ? "الترابيزة دي مش مسجّلة. امسح استيكر تاني."
           : data.error === "missing-desk-id"
             ? "معرفتش تبدأ — ناقص رقم الترابيزة."
             : "جلسة التركيز مقدرتش تبدأ. حاول تاني.",
@@ -266,6 +290,7 @@ export default function FocusTimer({
     async (session: StoredSession) => {
       if (completingRef.current) return;
       completingRef.current = true;
+      updatePhase("completing");
       try {
         const res = await fetch("/api/sessions/complete", {
           method: "POST",
@@ -285,16 +310,24 @@ export default function FocusTimer({
           return;
         }
 
-        sessionRef.current = null;
-        persistSession(null);
         teardown();
-        setCanRetry(false);
+        completingRef.current = false;
+        const retryable =
+          data.error !== "invalid-or-expired-token" &&
+          data.error !== "session-not-found";
+        setCanRetry(retryable);
+        if (!retryable) {
+          sessionRef.current = null;
+          persistSession(null);
+        }
         setErrorHint(
           data.error === "session-too-short"
-            ? "مستعجل كده؟ الترابيزة دي بتحسب بس جلسات 10 دقايق كاملة. المرة الجاية شوف بوست تاني."
+            ? "السيرفر لسه شايف الجلسة أقل من 9:30. استنى شوية وحاول تكمل تاني."
             : data.error === "invalid-or-expired-token"
-              ? "سجل الجلسة اختفى — ابدأ جلسة 10 دقايق جديدة عشان تسيب رسالة للترابيزة دي."
-              : "جلسة التركيز مقدرتش تخلص. حاول تاني.",
+              ? "الجلسة انتهت — ابدأ جلسة 10 دقايق جديدة عشان تسيب الرسالة."
+              : data.error === "session-not-found"
+                ? "مش لاقيين الجلسة — ابدأ جلسة 10 دقايق جديدة عشان تسيب الرسالة."
+                : "جلسة التركيز مقدرتش تخلص. حاول تاني.",
         );
         updatePhase("error");
       } catch {
@@ -307,6 +340,29 @@ export default function FocusTimer({
     },
     [onSessionComplete, persistSession, teardown, updatePhase],
   );
+
+  const resumePaused = useCallback(() => {
+    const session = sessionRef.current;
+    if (!session) return;
+    const pausedRemaining = Math.max(
+      0,
+      session.pausedRemainingMs ?? pausedRemainingRef.current,
+    );
+    if (pausedRemaining <= 0) {
+      void completeSession(session);
+      return;
+    }
+    session.virtualStart = Date.now() + pausedRemaining - session.durationMs;
+    session.lifecycle = "running";
+    delete session.awayAt;
+    delete session.pausedRemainingMs;
+    pausedRemainingRef.current = pausedRemaining;
+    persistSession(session);
+    clearGrace();
+    setRemainingMs(pausedRemaining);
+    updatePhase("running");
+    void requestWakeLock();
+  }, [clearGrace, completeSession, persistSession, requestWakeLock, updatePhase]);
 
   useEffect(() => {
     let stored: StoredSession | null = null;
@@ -325,6 +381,16 @@ export default function FocusTimer({
               typeof parsed.durationMs === "number" && parsed.durationMs > 0
                 ? parsed.durationMs
                 : FOCUS_DURATION_MS,
+            lifecycle:
+              parsed.lifecycle === "left" || parsed.lifecycle === "paused"
+                ? parsed.lifecycle
+                : "running",
+            awayAt: typeof parsed.awayAt === "number" ? parsed.awayAt : undefined,
+            pausedRemainingMs:
+              typeof parsed.pausedRemainingMs === "number" &&
+              parsed.pausedRemainingMs >= 0
+                ? parsed.pausedRemainingMs
+                : undefined,
           };
         } else {
           localStorage.removeItem(storageKey);
@@ -336,15 +402,58 @@ export default function FocusTimer({
 
     if (stored) {
       sessionRef.current = stored;
-      updatePhase("running");
-      void requestWakeLock();
+      if (stored.lifecycle === "paused") {
+        const pausedRemaining = Math.max(
+          0,
+          stored.pausedRemainingMs ??
+            stored.virtualStart + stored.durationMs - Date.now(),
+        );
+        pausedRemainingRef.current = pausedRemaining;
+        setRemainingMs(pausedRemaining);
+        updatePhase("paused");
+        if (pausedRemaining <= 0) void completeSession(stored);
+      } else if (stored.lifecycle === "left" && stored.awayAt) {
+        const awayForMs = Math.max(0, Date.now() - stored.awayAt);
+        if (awayForMs >= FOCUS_GRACE_MS) {
+          const pausedRemaining = Math.max(
+            0,
+            stored.virtualStart + stored.durationMs -
+              (stored.awayAt + FOCUS_GRACE_MS),
+          );
+          stored.lifecycle = "paused";
+          stored.pausedRemainingMs = pausedRemaining;
+          pausedRemainingRef.current = pausedRemaining;
+          persistSession(stored);
+          setRemainingMs(pausedRemaining);
+          updatePhase("paused");
+          if (pausedRemaining <= 0) void completeSession(stored);
+        } else {
+          setRemainingMs(
+            Math.max(0, stored.virtualStart + stored.durationMs - Date.now()),
+          );
+          setGraceLeftMs(FOCUS_GRACE_MS - awayForMs);
+          updatePhase("left");
+        }
+      } else {
+        stored.lifecycle = "running";
+        persistSession(stored);
+        updatePhase("running");
+        void requestWakeLock();
+      }
     }
 
     return () => {
       teardown();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deskId]);
+  }, [
+    completeSession,
+    deskId,
+    persistSession,
+    requestWakeLock,
+    storageKey,
+    teardown,
+    updatePhase,
+  ]);
 
   useEffect(() => {
     if (phase !== "running" && phase !== "left") return;
@@ -367,83 +476,118 @@ export default function FocusTimer({
   }, [phase, completeSession]);
 
   useEffect(() => {
-    if (phase !== "running" && phase !== "left") return;
-
-    const releaseLockInGrace = () => {
+    const clearScheduledGrace = () => {
       if (graceTimeoutRef.current !== null) {
         clearTimeout(graceTimeoutRef.current);
         graceTimeoutRef.current = null;
       }
+    };
+
+    const pauseAt = (session: StoredSession, awayAt: number) => {
+      if (phaseRef.current !== "left") return;
+      const remainingAtPause = Math.max(
+        0,
+        session.virtualStart + session.durationMs -
+          (awayAt + FOCUS_GRACE_MS),
+      );
+      clearScheduledGrace();
       setGraceLeftMs(null);
-      updatePhase("running");
+      pausedRemainingRef.current = remainingAtPause;
+      session.lifecycle = "paused";
+      session.awayAt = awayAt;
+      session.pausedRemainingMs = remainingAtPause;
+      persistSession(session);
+      setRemainingMs(remainingAtPause);
+      updatePhase("paused");
+      if (remainingAtPause <= 0) void completeSession(session);
+    };
+
+    const schedulePause = (session: StoredSession, awayAt: number) => {
+      clearScheduledGrace();
+      const graceRemaining = Math.max(
+        0,
+        FOCUS_GRACE_MS - Math.max(0, Date.now() - awayAt),
+      );
+      if (graceRemaining <= 0) {
+        pauseAt(session, awayAt);
+        return;
+      }
+      setGraceLeftMs(graceRemaining);
+      graceTimeoutRef.current = setTimeout(() => {
+        graceTimeoutRef.current = null;
+        pauseAt(session, awayAt);
+      }, graceRemaining);
+    };
+
+    const markLeft = () => {
+      if (phaseRef.current !== "running") return;
+      const session = sessionRef.current;
+      if (!session) return;
+      const awayAt = Date.now();
+      session.lifecycle = "left";
+      session.awayAt = awayAt;
+      delete session.pausedRemainingMs;
+      persistSession(session);
+      updatePhase("left");
+      schedulePause(session, awayAt);
     };
 
     const resumeRun = () => {
       const session = sessionRef.current;
       if (!session) return;
-      releaseLockInGrace();
+      clearScheduledGrace();
+      setGraceLeftMs(null);
+      session.lifecycle = "running";
+      delete session.awayAt;
+      delete session.pausedRemainingMs;
+      persistSession(session);
+      updatePhase("running");
       void requestWakeLock();
     };
 
-    const resumeFromPaused = () => {
-      const session = sessionRef.current;
-      if (!session) return;
-      session.virtualStart =
-        Date.now() + pausedRemainingRef.current - session.durationMs;
-      persistSession(session);
-      resumeRun();
-    };
-
-    const onVisible = () => {
-      if (phaseRef.current === "left") {
-        resumeRun();
-      } else if (phaseRef.current === "paused") {
-        resumeFromPaused();
-      }
-    };
-
-    const onBackgrounded = () => {
-      if (phaseRef.current !== "running") return;
-      const session = sessionRef.current;
-      if (!session) return;
-
-      updatePhase("left");
-      setGraceLeftMs(FOCUS_GRACE_MS);
-
-      graceTimeoutRef.current = setTimeout(() => {
-        graceTimeoutRef.current = null;
-        setGraceLeftMs(null);
-        if (phaseRef.current === "left") {
-          const remainingAtPause = Math.max(
-            0,
-            session.virtualStart + session.durationMs - Date.now(),
-          );
-          pausedRemainingRef.current = remainingAtPause;
-          if (remainingAtPause <= 0) {
-            void completeSession(session);
-          } else {
-            updatePhase("paused");
-          }
-        }
-      }, FOCUS_GRACE_MS);
-    };
-
     const onVisibility = () => {
+      const session = sessionRef.current;
       if (document.visibilityState === "visible") {
-        onVisible();
+        if (phaseRef.current === "left" && session?.awayAt) {
+          if (Date.now() - session.awayAt >= FOCUS_GRACE_MS) {
+            pauseAt(session, session.awayAt);
+            if ((session.pausedRemainingMs ?? 0) > 0) resumePaused();
+          } else {
+            resumeRun();
+          }
+        } else if (phaseRef.current === "paused") {
+          resumePaused();
+        }
       } else {
-        onBackgrounded();
+        markLeft();
       }
     };
 
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("pagehide", onBackgrounded);
+    window.addEventListener("pagehide", markLeft);
+
+    const stored = sessionRef.current;
+    if (stored?.lifecycle === "left" && stored.awayAt) {
+      if (document.visibilityState === "visible") {
+        if (Date.now() - stored.awayAt >= FOCUS_GRACE_MS) {
+          pauseAt(stored, stored.awayAt);
+          if ((stored.pausedRemainingMs ?? 0) > 0) resumePaused();
+        } else {
+          resumeRun();
+        }
+      } else {
+        schedulePause(stored, stored.awayAt);
+      }
+    } else if (document.visibilityState !== "visible") {
+      markLeft();
+    }
 
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pagehide", onBackgrounded);
+      window.removeEventListener("pagehide", markLeft);
+      clearScheduledGrace();
     };
-  }, [phase, persistSession, requestWakeLock, completeSession, updatePhase]);
+  }, [completeSession, persistSession, requestWakeLock, resumePaused, updatePhase]);
 
   const giveUp = useCallback(() => {
     completingRef.current = false;
@@ -482,39 +626,13 @@ export default function FocusTimer({
     );
   }
 
-  if (phase === "error") {
+  if (phase === "completing") {
     return (
-      <section
-        role="alert"
-        className="card flex flex-col items-center gap-[var(--space-4)] p-[var(--space-6)]"
-      >
-        <p
-          className="text-center font-semibold"
-          style={{ fontSize: "var(--text-base)", color: "var(--danger)" }}
-        >
-          {errorHint}
+      <section className="card flex flex-col items-center gap-[var(--space-4)] p-[var(--space-6)]" aria-live="polite">
+        <ProgressRing dashOffset={0} center="…" ariaLabel="بنثبت جلسة التركيز" />
+        <p className="text-center text-sm font-semibold" style={{ color: "var(--accent)" }}>
+          بنثبت الجلسة… ثانية واحدة.
         </p>
-        {canRetry && sessionRef.current !== null ? (
-          <button
-            type="button"
-            onClick={() => {
-              setErrorHint("");
-              clearGrace();
-              updatePhase("running");
-            }}
-            className="btn btn-primary btn-block"
-          >
-            حاول تاني تكمل
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={giveUp}
-            className="btn btn-ghost btn-block"
-          >
-            رجوع
-          </button>
-        )}
       </section>
     );
   }
@@ -536,14 +654,61 @@ export default function FocusTimer({
         >
           المؤقت وقف… ارجع للتبويبة عشان تكمل.
         </p>
+        <button type="button" onClick={resumePaused} className="btn btn-primary btn-block">
+          كمّل الجلسة
+        </button>
         <button type="button" onClick={giveUp} className="btn btn-ghost btn-sm">
-          سيبها
+          إلغاء الجلسة
         </button>
       </section>
     );
   }
 
-  if (phase === "idle") {
+  if (phase === "error") {
+    return (
+      <section
+        role="alert"
+        className="card flex flex-col items-center gap-[var(--space-4)] p-[var(--space-6)]"
+      >
+        <p
+          className="text-center font-semibold"
+          style={{ fontSize: "var(--text-base)", color: "var(--danger)" }}
+        >
+          {errorHint}
+        </p>
+        {canRetry && sessionRef.current !== null ? (
+          <button
+            type="button"
+            onClick={() => {
+              setErrorHint("");
+              const session = sessionRef.current;
+              if (session) {
+                session.lifecycle = "running";
+                delete session.awayAt;
+                delete session.pausedRemainingMs;
+                persistSession(session);
+              }
+              clearGrace();
+              updatePhase("running");
+            }}
+            className="btn btn-primary btn-block"
+          >
+            حاول تاني تكمل
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={giveUp}
+            className="btn btn-ghost btn-block"
+          >
+            رجوع
+          </button>
+        )}
+      </section>
+    );
+  }
+
+  if (phase === "idle" || phase === "starting") {
     return (
       <section className="card flex flex-col items-center gap-[var(--space-4)] p-[var(--space-6)]">
         <p
@@ -563,16 +728,17 @@ export default function FocusTimer({
         <button
           type="button"
           onClick={() => void start()}
+          disabled={phase === "starting"}
           className="btn btn-primary btn-block"
           style={{ fontSize: "var(--text-xl)" }}
         >
-          ابدأ الجلسة
+          {phase === "starting" ? "بنبدأ الجلسة…" : "ابدأ الجلسة"}
         </button>
         <p
           className="text-center"
           style={{ fontSize: "var(--text-sm)", color: "var(--ink-muted)" }}
         >
-          سيب التبويبة دي عشان المؤقت يقف.
+          لو خرجت من التبويبة أكتر من 30 ثانية، المؤقت هيقف.
         </p>
       </section>
     );
@@ -594,7 +760,7 @@ export default function FocusTimer({
         center={clock}
         ariaLabel={
           phase === "left"
-            ? "فترة سماح قبل ما المؤقت يقف"
+            ? "رجعت من التبويبة — الجلسة مستمرة"
             : `جلسة التركيز شغالة، متبقي ${clock}`
         }
         pulse={phase === "running"}
@@ -604,10 +770,12 @@ export default function FocusTimer({
         className="text-center"
         style={{ fontSize: "var(--text-sm)", color: "var(--ink-muted)" }}
       >
-        سيب التبويبة دي عشان المؤقت يقف.
+        {phase === "left"
+          ? "ارجع للتبويبة عشان المؤقت يكمل."
+          : "لو خرجت من التبويبة أكتر من 30 ثانية، المؤقت هيقف."}
       </p>
       <button type="button" onClick={giveUp} className="btn btn-ghost btn-sm">
-        سيبها
+        إلغاء الجلسة
       </button>
     </section>
   );

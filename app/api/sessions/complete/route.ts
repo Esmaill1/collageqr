@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { FOCUS_MINUTES, MIN_FOCUS_MS } from "@/lib/focus";
-import { signSession, verifySession } from "@/lib/jwt";
+import { signSigningToken, verifySession } from "@/lib/jwt";
 import { levelFromMinutes, levelLabel } from "@/lib/desk";
 
 const XP_PER_SESSION = FOCUS_MINUTES;
@@ -48,14 +48,23 @@ export async function POST(request: Request) {
 
   const completedAt = new Date();
   // Atomic completion: only the request whose updateMany flips completedAt
-  // from null to non-null (count === 1) awards XP. Concurrent/racing
-  // completions count 0 and are rejected, preventing double-XP.
+  // from null to non-null awards XP. If the client lost a successful response,
+  // a later retry returns a fresh signing token without awarding XP twice.
   const transaction = await prisma.$transaction(async (tx) => {
     const completed = await tx.focusSession.updateMany({
       where: { id: session.id, completedAt: null },
       data: { completedAt },
     });
-    if (completed.count !== 1) return null;
+    if (completed.count !== 1) {
+      const alreadyCompleted = await tx.focusSession.findUnique({
+        where: { id: session.id },
+      });
+      if (!alreadyCompleted?.completedAt) return null;
+      const desk = await tx.desk.findUniqueOrThrow({
+        where: { id: session.deskId },
+      });
+      return { desk, alreadyCompleted: true };
+    }
 
     const desk = await tx.desk.findUniqueOrThrow({
       where: { id: session.deskId },
@@ -69,7 +78,7 @@ export async function POST(request: Request) {
       data: { totalMinutes: { increment: XP_PER_SESSION }, level: newLevel },
     });
 
-    return { desk: updatedDesk };
+    return { desk: updatedDesk, alreadyCompleted: false };
   });
 
   if (!transaction) {
@@ -79,7 +88,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const signingToken = signSession({
+  const signingToken = signSigningToken({
     deskId: transaction.desk.id,
     sessionId: session.id,
     startedAt: session.startedAt.getTime(),

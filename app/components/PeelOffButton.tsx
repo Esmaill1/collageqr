@@ -74,11 +74,11 @@ export default function PeelOffButton({
   if (state.kind === "already-reported") {
     label = "اتبلغت قبل كده";
   } else if (state.kind === "reported") {
-    label = `اتبلغ (${state.count}/3)`;
+    label = `اتسجل البلاغ (${state.count}/3)`;
   } else if (busy) {
-    label = "…";
+    label = "بيتبعت…";
   } else {
-    label = "✕ شيل";
+    label = "⚑ بلّغ";
   }
 
   const danger = state.kind !== "idle";
@@ -88,7 +88,8 @@ export default function PeelOffButton({
       type="button"
       onClick={handleClick}
       disabled={busy || done}
-      title="بلّغ عن الورقة دي للمشرفين"
+      title="بلّغ عن الرسالة — ثلاثة بلاغات تخفيها للمراجعة"
+      aria-label={label}
       className={`btn btn-sm ${danger ? "" : "btn-ghost"}`}
       style={
         danger

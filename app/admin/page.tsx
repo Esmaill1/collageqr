@@ -37,15 +37,17 @@ function snippet(c: AdminCapsule): string {
 }
 
 const typeLabels: Record<string, string> = {
-  note: "ملحوظة",
-  sticker: "استيكر",
+  TEXT: "رسالة نصية",
+  SEALED: "رسالة مختومة",
+  DOODLE: "رسمة",
+  CASSETTE: "أغنية",
+  PASS_DOODLE: "رسمة جماعية",
 };
 
 const statusLabels: Record<string, string> = {
-  hidden: "مخفي",
-  flagged: "مبلّغ",
-  published: "منشور",
-  sealed: "مختوم",
+  HIDDEN: "مخفي",
+  FLAGGED: "مبلّغ عنه",
+  PUBLISHED: "منشور",
 };
 
 function typeLabel(type: string): string {
@@ -60,42 +62,67 @@ export default function AdminPage() {
   const [tokenInput, setTokenInput] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [capsules, setCapsules] = useState<AdminCapsule[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async (authToken: string): Promise<boolean> => {
-    setBusy(true);
-    try {
-      const res = await fetch("/api/admin", {
-        headers: authHeaders(authToken),
-      });
-      if (res.status === 401) {
-        setToken(null);
-        setCapsules(null);
-        setError("كلمة سر غلط");
+  const load = useCallback(
+    async (
+      authToken: string,
+      requestedPage = 0,
+      append = false,
+    ): Promise<boolean> => {
+      setBusy(true);
+      try {
+        const res = await fetch(`/api/admin?page=${requestedPage}`, {
+          headers: authHeaders(authToken),
+        });
+        if (res.status === 401) {
+          setToken(null);
+          setCapsules(null);
+          setTotal(0);
+          setHasMore(false);
+          setPage(0);
+          setError("كلمة سر غلط");
+          return false;
+        }
+        if (!res.ok) {
+          setError(`مشكلة في API الأدمن (${res.status})`);
+          return false;
+        }
+        const data = (await res.json()) as {
+          capsules?: AdminCapsule[];
+          total?: number;
+          hasMore?: boolean;
+          page?: number;
+        };
+        setCapsules((current) =>
+          append
+            ? [...(current ?? []), ...(data.capsules ?? [])]
+            : (data.capsules ?? []),
+        );
+        setTotal(data.total ?? data.capsules?.length ?? 0);
+        setHasMore(data.hasMore === true);
+        setPage(data.page ?? requestedPage);
+        setError(null);
+        return true;
+      } catch {
+        setError("مشكلة في الاتصال");
         return false;
+      } finally {
+        setBusy(false);
       }
-      if (!res.ok) {
-        setError(`مشكلة في API الأدمن (${res.status})`);
-        return false;
-      }
-      const data = (await res.json()) as { capsules?: AdminCapsule[] };
-      setCapsules(data.capsules ?? []);
-      setError(null);
-      return true;
-    } catch {
-      setError("مشكلة في الاتصال");
-      return false;
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!tokenInput) return;
     setError(null);
-    const ok = await load(tokenInput);
+    const ok = await load(tokenInput, 0, false);
     if (ok) {
       setToken(tokenInput);
       setTokenInput("");
@@ -104,6 +131,12 @@ export default function AdminPage() {
 
   async function act(capsuleId: string, action: "restore" | "delete") {
     if (!token) return;
+    if (
+      action === "delete" &&
+      !window.confirm("امسح الرسالة نهائيًا؟ مش هتقدر ترجعها بعد كده.")
+    ) {
+      return;
+    }
     setBusy(true);
     try {
       const res =
@@ -127,15 +160,32 @@ export default function AdminPage() {
       if (res.status === 401) {
         setToken(null);
         setCapsules(null);
+        setTotal(0);
+        setHasMore(false);
+        setPage(0);
         setError("كلمة سر غلط");
         return;
       }
-      // Refetch regardless so the table always mirrors the DB.
-      await load(token);
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(
+          data?.error === "not-found" || data?.error === "stale-moderation-item"
+            ? "الرسالة مش موجودة — حد تاني عالجها قبل كده."
+            : `المعالجة فشلت (${res.status}). حاول تاني.`,
+        );
+        return;
+      }
+      await load(token, 0, false);
     } catch {
       setError("مشكلة في الاتصال");
+    } finally {
       setBusy(false);
     }
+  }
+
+  async function loadMore() {
+    if (!token || busy || !hasMore) return;
+    await load(token, page + 1, true);
   }
 
   if (!token) {
@@ -164,7 +214,8 @@ export default function AdminPage() {
                 onChange={(e) => setTokenInput(e.target.value)}
                 placeholder="كلمة سر الأدمن"
                 className="input"
-                autoComplete="off"
+                autoComplete="current-password"
+                dir="ltr"
               />
             </div>
             {error && (
@@ -207,10 +258,15 @@ export default function AdminPage() {
           </h1>
           <span
             className="pill mt-2"
-            style={{ color: count > 0 ? "var(--accent)" : "var(--ink-muted)" }}
+            style={{ color: total > 0 ? "var(--accent)" : "var(--ink-muted)" }}
           >
-            مخفي / مبلّغ: <strong>{count}</strong>
+            مخفي / مبلّغ: <strong>{total}</strong>
           </span>
+          {hasMore ? (
+            <p className="mt-2 text-xs" style={{ color: "var(--accent)" }} role="status">
+              معروض {count} من {total} رسالة للمراجعة.
+            </p>
+          ) : null}
         </div>
         <Link
           href="/"
@@ -267,10 +323,10 @@ export default function AdminPage() {
                   <span>·</span>
                   <span>بلاغات {c.reportCount}</span>
                   <span>·</span>
-                  <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                  <span>{new Date(c.createdAt).toLocaleDateString("ar-EG")}</span>
                   <span>·</span>
-                  <span>ترابيزة {c.deskId}</span>
-                  {c.authorAlias ? <span>· — {c.authorAlias}</span> : null}
+                  <span>ترابيزة <bdi dir="ltr">{c.deskId}</bdi></span>
+                  {c.authorAlias ? <span>· — <bdi>{c.authorAlias}</bdi></span> : null}
                 </p>
               </div>
               {c.doodleData && (
@@ -309,6 +365,16 @@ export default function AdminPage() {
           ))}
         </ul>
       )}
+      {hasMore ? (
+        <button
+          type="button"
+          onClick={() => void loadMore()}
+          disabled={busy}
+          className="btn btn-ghost btn-block mt-4"
+        >
+          {busy ? "بنحمّل…" : "حمّل رسائل أقدم"}
+        </button>
+      ) : null}
     </main>
   );
 }

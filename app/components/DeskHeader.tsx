@@ -13,11 +13,14 @@ export default function DeskHeader({
 
   return (
     <header className="card mb-6" style={{ padding: "var(--space-6)" }}>
+      <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "var(--accent)" }}>
+        DeskLore · حكايات الترابيزات
+      </p>
       <h1
         className="font-bold"
         style={{ color: "var(--ink)", fontSize: "var(--text-2xl)", lineHeight: 1.25 }}
       >
-        ترابيزة {desk.id}
+        ترابيزة <bdi dir="ltr">{desk.id}</bdi>
       </h1>
       <p
         className="mt-1"

@@ -49,13 +49,14 @@ export async function POST(request: Request) {
   });
 
   return res(
-    {
-      ok: true,
-      sessionToken,
-      sessionId: session.id,
-      startedAt,
-      durationMs: FOCUS_DURATION_MS,
-    },
+      {
+        ok: true,
+        sessionToken,
+        sessionId: session.id,
+        startedAt,
+        serverNow: Date.now(),
+        durationMs: FOCUS_DURATION_MS,
+      },
     201,
   );
 }

@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getDeskPrompt } from "../lib/prompts";
 import { hasDeferredCapsuleFields } from "../lib/pilot";
+import { isValidDeskId, parseDeskList } from "../lib/sticker";
+import { deviceHashFor } from "../lib/device";
 import {
   NOTE_MAX_CHARS,
   normalizeNoteText,
@@ -28,4 +30,17 @@ test("the pilot rejects deferred artifact payloads", () => {
   assert.equal(hasDeferredCapsuleFields({ doodleData: "anything" }), true);
   assert.equal(hasDeferredCapsuleFields({ trackUrl: null }), true);
   assert.equal(hasDeferredCapsuleFields({ isPassDoodle: false }), true);
+});
+
+test("sticker desk IDs are normalized and limited to the pilot desks", () => {
+  assert.equal(isValidDeskId("B01"), true);
+  assert.equal(isValidDeskId("B30"), true);
+  assert.equal(isValidDeskId("B00"), false);
+  assert.equal(isValidDeskId("B31"), false);
+  assert.deepEqual(parseDeskList("b14, B14\nB02"), ["B14", "B02"]);
+});
+
+test("device identity survives an IP address change", () => {
+  assert.equal(deviceHashFor("198.51.100.10", "device-1"), deviceHashFor("203.0.113.8", "device-1"));
+  assert.notEqual(deviceHashFor("198.51.100.10", "device-1"), deviceHashFor("198.51.100.10", "device-2"));
 });

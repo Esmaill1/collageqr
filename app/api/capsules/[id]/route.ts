@@ -154,6 +154,31 @@ export async function PATCH(
   return res({ ok: true, id }, 200);
 }
 
+/**
+ * Recover an envelope that this device already opened. The secret is never
+ * returned to a different device and never appears in the SSR feed.
+ */
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const device = await getDeviceContext();
+  const res = (body: unknown, status: number) =>
+    applyDeviceCookie(NextResponse.json(body, { status }), device);
+  const capsule = await loadCapsule(id);
+
+  if (!capsule) return res({ error: "not-found" }, 404);
+  if (!capsule.isSealed || !capsule.isOpened) {
+    return res({ error: "not-opened" }, 409);
+  }
+  if (capsule.openedByDeviceHash !== device.deviceHash) {
+    return unauthorized("not-opener", device);
+  }
+
+  return res({ ok: true, capsule: serializeCapsule(capsule) }, 200);
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },

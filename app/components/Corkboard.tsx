@@ -56,13 +56,25 @@ export default function Corkboard({
           ✉ مظروف مختوم مستني اللي بعدك
         </p>
       )}
-      <ul className="columns-1 gap-4 sm:columns-2">
-        {capsules.map((capsule, index) => (
-          <li key={capsule.id} className="mb-4 break-inside-avoid">
-            <CapsuleCard capsule={capsule} featured={index === 0} />
-          </li>
-        ))}
-      </ul>
+      <CapsuleCard capsule={capsules[0]} featured />
+
+      {capsules.length > 1 ? (
+        <details className="card mt-5 overflow-hidden">
+          <summary
+            className="cursor-pointer px-4 py-3 text-sm font-semibold"
+            style={{ color: "var(--ink-muted)" }}
+          >
+            شوف الرسائل الأقدم ({capsules.length - 1})
+          </summary>
+          <ul className="columns-1 gap-4 border-t px-4 pt-4 sm:columns-2" style={{ borderColor: "var(--grid-line)" }}>
+            {capsules.slice(1).map((capsule) => (
+              <li key={capsule.id} className="mb-4 break-inside-avoid">
+                <CapsuleCard capsule={capsule} />
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </section>
   );
 }

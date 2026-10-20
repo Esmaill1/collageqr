@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { parseDeskList } from "@/lib/sticker";
+import { isValidDeskId, parseDeskList } from "@/lib/sticker";
 
 type Sticker = { id: string; url: string; qrSvg: string };
 
@@ -19,12 +19,26 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (activeDesks.length === 0) return;
+      if (activeDesks.length === 0) {
+        setLoading(false);
+        setStickers([]);
+        return;
+      }
       setLoading(true);
       setError(null);
+      setStickers([]);
       try {
         const res = await fetch(`/api/stickers?desks=${encodeURIComponent(activeDesks.join(","))}`);
-        if (!res.ok) throw new Error(`فشل توليد الاستيكرات (HTTP ${res.status})`);
+        if (!res.ok) {
+          const data = (await res.json().catch(() => null)) as { error?: string; invalidDeskIds?: string[] } | null;
+          throw new Error(
+            data?.error === "app-url-not-configured"
+              ? "لازم تضيف رابط الموقع العام قبل طباعة استيكرات الإنتاج."
+              : data?.invalidDeskIds?.length
+                ? `أرقام ترابيزات غير صحيحة: ${data.invalidDeskIds.join(", ")}`
+                : `فشل توليد الاستيكرات (HTTP ${res.status})`,
+          );
+        }
         const data: Sticker[] = await res.json();
         if (!cancelled) setStickers(data);
       } catch (err) {
@@ -41,6 +55,24 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
     };
   }, [activeDesks]);
 
+  const generate = () => {
+    const parsed = parseDeskList(deskInput);
+    const invalid = parsed.filter((id) => !isValidDeskId(id));
+    setStickers([]);
+    if (parsed.length === 0) {
+      setError("اكتب رقم ترابيزة واحد على الأقل، مثل B14.");
+      setActiveDesks([]);
+      return;
+    }
+    if (invalid.length > 0) {
+      setError(`الأرقام دي مش صحيحة: ${invalid.join(", ")}. استخدم B01 إلى B30.`);
+      setActiveDesks([]);
+      return;
+    }
+    setError(null);
+    setActiveDesks(parsed);
+  };
+
   return (
     <section className="w-full">
       <div className="not-print">
@@ -56,6 +88,7 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
           rows={6}
           value={deskInput}
           onChange={(e) => setDeskInput(e.target.value)}
+          dir="ltr"
           className="input font-mono text-sm"
           style={{ resize: "vertical" }}
         />
@@ -66,7 +99,7 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => setActiveDesks(parseDeskList(deskInput))}
+            onClick={generate}
             className="btn btn-primary"
           >
             ولّد
@@ -74,12 +107,13 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
           <button
             type="button"
             onClick={() => window.print()}
+            disabled={loading || stickers.length === 0 || Boolean(error)}
             className="btn btn-ghost"
           >
             اطبع
           </button>
           <span className="pill" style={{ color: "var(--ink-muted)" }}>
-            {activeDesks.length} ترابيزة
+            {stickers.length > 0 ? `${stickers.length} جاهز للطباعة` : `${activeDesks.length} ترابيزة`}
           </span>
         </div>
 
@@ -97,6 +131,8 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
       <div className="not-print mt-8">
         {loading && (
           <p
+            role="status"
+            aria-live="polite"
             className="flex items-center gap-2 text-sm"
             style={{ color: "var(--ink-muted)" }}
           >
@@ -105,7 +141,7 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
           </p>
         )}
         {!loading && stickers.length === 0 && !error && (
-          <p className="text-sm" style={{ color: "var(--ink-muted)" }}>
+          <p className="text-sm" style={{ color: "var(--ink-muted)" }} role="status">
             مفيش ترابيزات لسه — عدّل القائمة واضغط ولّد.
           </p>
         )}
@@ -116,7 +152,7 @@ export default function StickerSheet({ desks }: { desks: string[] }) {
           {stickers.map((s) => (
             <div key={s.id} className="sticker">
               {renderQr(s.qrSvg, `كود QR لترابيزة ${s.id}`)}
-              <p className="sticker-id">ترابيزة #{s.id}</p>
+              <p className="sticker-id">ترابيزة #<bdi dir="ltr">{s.id}</bdi></p>
               <p className="sticker-sub">امسح عشان تفتح كبسولة الترابيزة + مؤقت التركيز</p>
             </div>
           ))}

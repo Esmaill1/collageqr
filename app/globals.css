@@ -15,7 +15,7 @@
   --paper-raised: #ffffff;  /* polaroid frame, modal */
   --ink: #1a1714;           /* deep ink */
   --ink-muted: #5b5249;     /* secondary text (AA on --bg) */
-  --ink-faint: #8a8077;     /* tertiary / captions */
+  --ink-faint: #6f665e;     /* tertiary / captions */
   --accent: #b14a1c;        /* terracotta / ink-stamp */
   --accent-hover: #943c16;
   --accent-soft: rgba(177, 74, 28, 0.10);
@@ -56,7 +56,7 @@
   --paper-raised: #2c2620;
   --ink: #ece3d4;
   --ink-muted: #b3a896;
-  --ink-faint: #847a6b;
+  --ink-faint: #a79b89;
   --accent: #d9a441;
   --accent-hover: #c0892f;
   --accent-soft: rgba(217, 164, 65, 0.14);
@@ -133,7 +133,7 @@ textarea:focus-visible, canvas:focus-visible {
   .btn-danger:hover:not(:disabled) { filter: brightness(0.92); }
 
   .btn-block { width: 100%; }
-  .btn-sm { min-height: 36px; padding: var(--space-2) var(--space-3); font-size: var(--text-sm); }
+  .btn-sm { min-height: var(--touch); padding: var(--space-2) var(--space-3); font-size: var(--text-sm); }
 
   /* Inputs — labelled, focus ring, error state */
   .input {

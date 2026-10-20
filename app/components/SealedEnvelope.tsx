@@ -1,39 +1,55 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-/**
- * Wax-seal envelope modal (PRD §3.3 P1). Rendered by app/page.tsx when
- * getDeskFeed surfaces a claimableSealed envelope authored by a device
- * other than the current one. Content arrives ONLY after the atomic
- * claim-open below — never SSR'd into the page payload.
- */
 
 interface ClaimedCapsule {
   textContent: string | null;
   authorAlias: string | null;
 }
 
-type Stage = "sealed" | "opened" | "pinned" | "deleted";
+type Stage = "sealed" | "deferred" | "opened" | "pinned" | "deleted";
 
+/**
+ * Inline sealed-envelope card. It never blocks the desk or focus flow, and an
+ * opener can recover the secret after a refresh because the server remembers
+ * which device claimed it.
+ */
 export default function SealedEnvelope({
   capsuleId,
+  initiallyOpened = false,
 }: {
   capsuleId: string;
+  initiallyOpened?: boolean;
 }) {
   const router = useRouter();
-  const [stage, setStage] = useState<Stage>("sealed");
+  const [stage, setStage] = useState<Stage>(initiallyOpened ? "opened" : "sealed");
   const [claimed, setClaimed] = useState<ClaimedCapsule | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(initiallyOpened);
   const [error, setError] = useState<string | null>(null);
-  // Presentational only: triggers the backdrop fade-in after first paint.
-  const [shown, setShown] = useState(false);
+
+  const loadOpened = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/capsules/${capsuleId}`);
+        const data = (await res.json().catch(() => null)) as
+          | { capsule?: ClaimedCapsule; error?: string }
+          | null;
+        if (!res.ok || !data?.capsule) {
+          throw new Error(data?.error ?? `HTTP ${res.status}`);
+        }
+        setClaimed(data.capsule);
+    } catch {
+      setError("الرسالة اتفتحت قبل كده، بس مقدرناش نرجعها. جرّب تاني.");
+    } finally {
+      setBusy(false);
+    }
+  }, [capsuleId]);
 
   useEffect(() => {
-    const raf = requestAnimationFrame(() => setShown(true));
-    return () => cancelAnimationFrame(raf);
-  }, []);
+    if (initiallyOpened) void loadOpened();
+  }, [initiallyOpened, loadOpened]);
 
   const call = async (init: RequestInit, nextStage: Stage) => {
     setBusy(true);
@@ -41,24 +57,27 @@ export default function SealedEnvelope({
     try {
       const res = await fetch(`/api/capsules/${capsuleId}`, init);
       const data = (await res.json().catch(() => null)) as
-        | { capsule?: ClaimedCapsule }
+        | { capsule?: ClaimedCapsule; error?: string }
         | null;
 
       if (!res.ok) {
         setError(
           res.status === 403
-            ? "الظرف ده اتفتح من جهاز تاني."
+            ? "الرسالة دي اتفتحت من جهاز تاني."
             : res.status === 409
-            ? "حد تاني فتح الظرف ده قبل كده."
-            : `ختم الشمع مش عايز يفتح (${res.status}). حاول تاني.`,
+              ? "حد تاني فتح الرسالة دي قبل كده."
+              : "حصلت مشكلة. جرّب تاني.",
         );
         return;
       }
+
       if (data?.capsule) setClaimed(data.capsule);
       setStage(nextStage);
-      if (nextStage !== "opened") router.refresh();
+      if (nextStage === "pinned" || nextStage === "deleted") {
+        router.refresh();
+      }
     } catch {
-      setError("النت وقع — الظرف فضل مختوم. حاول تاني.");
+      setError("النت وقع — الرسالة لسه مستنية قرارك. جرّب تاني.");
     } finally {
       setBusy(false);
     }
@@ -87,166 +106,116 @@ export default function SealedEnvelope({
   };
 
   const handleKeepSecret = async () => {
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm("امسح الرسالة نهائيًا؟ مش هتقدر ترجعها بعد كده.")
+    ) {
+      return;
+    }
     await call({ method: "DELETE" }, "deleted");
   };
 
-  const close = () => {
-    router.refresh();
-  };
+  if (stage === "deferred") {
+    return (
+      <section className="card p-4" aria-label="رسالة مختومة">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
+            ✉ رسالة مختومة مستنياك
+          </p>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setStage("sealed")}>
+            افتحها دلوقتي
+          </button>
+        </div>
+        <p className="mt-2 text-xs" style={{ color: "var(--ink-muted)" }}>
+          تقدر تكمّل جلسة التركيز الأول — الرسالة مش هتضيع.
+        </p>
+      </section>
+    );
+  }
+
+  if (stage === "pinned" || stage === "deleted") {
+    return (
+      <section
+        className="card p-4"
+        style={{ background: "var(--accent-soft)", borderColor: "var(--accent)" }}
+        aria-live="polite"
+      >
+        <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+          {stage === "pinned"
+            ? "اتثبتت الرسالة على حيطة الترابيزة."
+            : "اتمسحت الرسالة بعد تأكيدك — ومش هتظهر تاني."}
+        </p>
+        <button type="button" onClick={() => router.refresh()} className="btn btn-sm btn-ghost mt-3">
+          حدّث الحيطة
+        </button>
+      </section>
+    );
+  }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      style={{
-        opacity: shown ? 1 : 0,
-        transition: "opacity var(--transition-base) ease",
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="ظرف مختوم"
-    >
-      <div
-        className="card w-full max-w-[420px] p-6 text-center"
-        style={{
-          backgroundColor: "var(--paper-raised)",
-          boxShadow: "var(--shadow-lift)",
-        }}
-      >
-        {stage === "sealed" && (
-          <>
-            <div className="text-5xl" aria-hidden="true">
-              ✉️
-            </div>
-            <h2
-              className="mt-3 text-lg font-bold"
-              style={{ color: "var(--ink)" }}
-            >
-              مظروف مختوم، سيبه للي بعدك
-            </h2>
-            <p
-              className="mt-1 text-xs leading-relaxed"
-              style={{ color: "var(--ink-muted)" }}
-            >
-              اللي كان قاعد هنا قبل كده كتب حاجة للي هيقعدها بعد كده. يعني انت.
-              بتتقرا مرة واحدة بس.
-            </p>
-            {error ? (
-              <p
-                className="mt-2 text-sm font-semibold"
-                style={{ color: "var(--danger)" }}
-                role="alert"
-              >
-                {error}
+    <section className="card p-5" aria-label="رسالة مختومة للي بعدك">
+      {stage === "sealed" ? (
+        <>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-base font-bold" style={{ color: "var(--ink)" }}>
+                ✉ رسالة مختومة للي قعد قبلك
               </p>
-            ) : null}
-            <button
-              type="button"
-              onClick={handleOpen}
-              disabled={busy}
-              className="btn btn-primary btn-block mt-4"
-            >
-              {busy ? "بيكسر الختم..." : "اكسر ختم الشمع"}
+              <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--ink-muted)" }}>
+                افتحها لما تكون مستعد. ولو مش وقتها، سيبها مستنياك.
+              </p>
+            </div>
+            <span className="text-3xl" aria-hidden="true">✉️</span>
+          </div>
+          {error ? <p className="mt-3 text-sm font-semibold" style={{ color: "var(--danger)" }} role="alert">{error}</p> : null}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button type="button" onClick={handleOpen} disabled={busy} className="btn btn-primary flex-1">
+              {busy ? "بيفتح…" : "افتح الرسالة"}
             </button>
-          </>
-        )}
-
-        {stage === "opened" && (
-          <>
-            <p
-              className="text-xs font-semibold"
-              style={{ color: "var(--accent)" }}
-            >
-              ✉ اتفتح — اقراه تحت
-            </p>
-            {claimed?.authorAlias ? (
-              <p
-                className="mt-1 text-sm italic"
-                style={{ color: "var(--ink-muted)" }}
-              >
-                — {claimed.authorAlias}
-              </p>
-            ) : (
-              <p
-                className="mt-1 text-sm italic"
-                style={{ color: "var(--ink-muted)" }}
-              >
-                — طالب مجهول
-              </p>
-            )}
-            {claimed?.textContent ? (
-              <p
-                className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed"
-                style={{ color: "var(--ink)" }}
-              >
-                {claimed.textContent}
-              </p>
-            ) : (
-              <p
-                className="mt-3 text-sm"
-                style={{ color: "var(--ink-muted)" }}
-              >
-                (ملاحظة فاضية)
-              </p>
-            )}
-            {error ? (
-              <p
-                className="mt-2 text-sm font-semibold"
-                style={{ color: "var(--danger)" }}
-                role="alert"
-              >
-                {error}
-              </p>
-            ) : null}
-            <p
-              className="mt-4 text-xs font-semibold"
-              style={{ color: "var(--ink)" }}
-            >
-              تعمل له إيه دلوقتي؟
-            </p>
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                onClick={handlePin}
-                disabled={busy}
-                className="btn btn-primary flex-1"
-              >
-                {busy ? "..." : "📌 ثبّت على الحيطة"}
-              </button>
-              <button
-                type="button"
-                onClick={handleKeepSecret}
-                disabled={busy}
-                className="btn btn-danger flex-1"
-              >
-                {busy ? "..." : "🤫 سيبها سر (امسح)"}
-              </button>
-            </div>
-          </>
-        )}
-
-        {(stage === "pinned" || stage === "deleted") && (
-          <>
-            <div className="text-4xl" aria-hidden="true">
-              {stage === "pinned" ? "📌" : "🤫"}
-            </div>
-            <p
-              className="mt-3 text-sm font-bold"
-              style={{ color: "var(--ink)" }}
-            >
-              {stage === "pinned"
-                ? "اتثبّت على حيطة الترابيزة دي."
-                : "اتمسح سرًا — المظروف راح خالص."}
-            </p>
-            <button
-              type="button"
-              onClick={close}
-              className="btn btn-ghost btn-block mt-4"
-            >
-              ارجع للحيطة
+            <button type="button" onClick={() => setStage("deferred")} disabled={busy} className="btn btn-ghost flex-1">
+              بعدين
             </button>
-          </>
-        )}
-      </div>
-    </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
+            {busy ? "بنرجّع الرسالة…" : "✉ الرسالة اتفتحت"}
+          </p>
+          {claimed?.authorAlias ? (
+            <p className="mt-1 text-sm italic" style={{ color: "var(--ink-muted)" }} dir="auto">
+              — <bdi>{claimed.authorAlias}</bdi>
+            </p>
+          ) : null}
+           {claimed?.textContent ? (
+            <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed" style={{ color: "var(--ink)" }} dir="auto">
+              {claimed.textContent}
+            </p>
+          ) : busy ? (
+            <p className="mt-3 text-sm" style={{ color: "var(--ink-muted)" }} role="status">بنجيبها…</p>
+          ) : null}
+          {error ? <p className="mt-3 text-sm font-semibold" style={{ color: "var(--danger)" }} role="alert">{error}</p> : null}
+          {!claimed && error ? (
+            <button type="button" onClick={() => void loadOpened()} disabled={busy} className="btn btn-ghost btn-block mt-3">
+              حاول نرجّع الرسالة
+            </button>
+          ) : (
+            <>
+              <p className="mt-4 text-sm font-semibold" style={{ color: "var(--ink)" }}>
+                تحب تعمل إيه بالرسالة؟
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" onClick={handlePin} disabled={busy || !claimed} className="btn btn-primary flex-1">
+                  {busy ? "بنحفظ…" : "📌 ثبّت على الحيطة"}
+                </button>
+                <button type="button" onClick={handleKeepSecret} disabled={busy || !claimed} className="btn btn-danger flex-1">
+                  🤫 امسحها سرًا
+                </button>
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </section>
   );
 }

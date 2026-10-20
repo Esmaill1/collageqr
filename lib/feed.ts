@@ -21,6 +21,8 @@ export interface CapsuleFeedItem {
   trackUrl: string | null;
   trackMetadata: TrackMetadata | null;
   passParentId: string | null;
+  reportCount: number;
+  status: "PUBLISHED";
   createdAt: Date;
 }
 
@@ -34,11 +36,18 @@ export interface ClaimableSealedItem {
   createdAt: Date;
 }
 
+/** An envelope already opened by this device but not yet pinned or deleted. */
+export interface OpenedSealedItem {
+  id: string;
+  createdAt: Date;
+}
+
 export interface DeskFeedResult {
   desk: Desk | null;
   capsules: CapsuleFeedItem[];
   sealedPendingCount: number;
   claimableSealed: ClaimableSealedItem | null;
+  openedSealed: OpenedSealedItem | null;
 }
 
 /**
@@ -61,6 +70,8 @@ const FEED_SELECT = {
   trackUrl: true,
   trackMetadata: true,
   passParentId: true,
+  reportCount: true,
+  status: true,
   createdAt: true,
 } as const;
 
@@ -73,6 +84,8 @@ function toFeedItem(c: {
   trackUrl: string | null;
   trackMetadata: unknown;
   passParentId: string | null;
+  reportCount: number;
+  status: string;
   createdAt: Date;
 }): CapsuleFeedItem {
   return {
@@ -84,6 +97,8 @@ function toFeedItem(c: {
     trackUrl: c.trackUrl,
     trackMetadata: (c.trackMetadata as TrackMetadata | null) ?? null,
     passParentId: c.passParentId,
+    reportCount: c.reportCount,
+    status: "PUBLISHED",
     createdAt: c.createdAt,
   };
 }
@@ -113,6 +128,7 @@ export async function getDeskFeed(
     capsules: [],
     sealedPendingCount: 0,
     claimableSealed: null,
+    openedSealed: null,
   };
 
   const desk = await prisma.desk.findUnique({
@@ -135,7 +151,7 @@ export async function getDeskFeed(
     ...sealedFilter,
   };
 
-  const [capsules, sealedPendingCount, claimable] = await Promise.all([
+  const [capsules, sealedPendingCount, claimable, opened] = await Promise.all([
     prisma.capsule.findMany({
       where: {
         deskId,
@@ -162,6 +178,20 @@ export async function getDeskFeed(
           select: { id: true, createdAt: true },
         })
       : Promise.resolve(null),
+    device && device.hasIdentity
+      ? prisma.capsule.findFirst({
+          where: {
+            deskId,
+            status: "PUBLISHED",
+            type: "SEALED",
+            isSealed: true,
+            isOpened: true,
+            openedByDeviceHash: device.hash,
+          },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, createdAt: true },
+        })
+      : Promise.resolve(null),
   ]);
 
   return {
@@ -169,5 +199,6 @@ export async function getDeskFeed(
     capsules: capsules.map(toFeedItem),
     sealedPendingCount,
     claimableSealed: claimable ? { id: claimable.id, createdAt: claimable.createdAt } : null,
+    openedSealed: opened ? { id: opened.id, createdAt: opened.createdAt } : null,
   };
 }

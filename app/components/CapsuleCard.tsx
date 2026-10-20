@@ -45,16 +45,13 @@ function CardFooter({
         className="text-xs italic"
         style={{ color: tone === "sticky" ? "var(--sticky-ink)" : "var(--ink-muted)" }}
       >
-        {capsule.authorAlias ? `— ${capsule.authorAlias}` : ""}
+        {capsule.authorAlias ? <>— <bdi>{capsule.authorAlias}</bdi></> : ""}
       </span>
       <span className="flex items-center gap-3">
-        {/* Wave 7: CapsuleFeedItem carries no reportCount/status — feed is
-            PUBLISHED-only, so defaults are safe; the server reports the
-            real count in the peel-off response. */}
         <PeelOffButton
           capsuleId={capsule.id}
-          reportCount={0}
-          status={"PUBLISHED"}
+          reportCount={capsule.reportCount}
+          status={capsule.status}
         />
         <time
           dateTime={capsule.createdAt.toISOString()}
@@ -73,7 +70,7 @@ function TextBody({ capsule }: { capsule: CapsuleFeedItem }) {
   if (!text) return null;
   // Color is inherited: --sticky-ink on the sticky note, --ink elsewhere.
   return (
-    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+    <p dir="auto" className="whitespace-pre-wrap break-words text-sm leading-relaxed">
       {text}
     </p>
   );

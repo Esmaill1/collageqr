@@ -1,4 +1,5 @@
 import { cookies, headers } from "next/headers";
+import Link from "next/link";
 import { getDeskFeed } from "@/lib/feed";
 import { getDeskPrompt } from "@/lib/prompts";
 import {
@@ -48,9 +49,12 @@ export default async function DeskPage({
             style={{ color: "var(--ink-muted)" }}
           >
             {deskId
-              ? "الترابيزة دي لسه متسجلةش. اتأكد من الاستيكر على ترابيزتك وامسح تاني."
+              ? <>الكود <bdi dir="ltr">{deskId}</bdi> مش مسجّل. اتأكد من الاستيكر وامسح تاني.</>
               : "دوّر على استيكر DeskLore على ترابيزة في المكتبة، امسح الـ QR، وافتح حيطة الترابيزة دي."}
           </p>
+          <Link href="/" className="btn btn-ghost btn-block mt-6">
+            امسح استيكر تاني
+          </Link>
         </div>
       </main>
     );
@@ -63,14 +67,24 @@ export default async function DeskPage({
       <DeskHeader desk={feed.desk} prompt={prompt} />
       <Corkboard capsules={feed.capsules} sealedPendingCount={feed.sealedPendingCount} />
 
+      {/* The envelope is inline and deferable; secret content is claimed or
+          recovered client-side and is never SSR'd. */}
+      {feed.openedSealed ? (
+        <SealedEnvelope
+          key={`opened-${feed.openedSealed.id}`}
+          capsuleId={feed.openedSealed.id}
+          initiallyOpened
+        />
+      ) : null}
+      {feed.claimableSealed ? (
+        <SealedEnvelope
+          key={`claimable-${feed.claimableSealed.id}`}
+          capsuleId={feed.claimableSealed.id}
+        />
+      ) : null}
+
       {/* Read first, then commit to a short focus session and leave a message. */}
       <DeskInteraction deskId={feed.desk.id} prompt={prompt} />
-
-      {/* Wax-seal modal (PRD §3.3 P1): content is claimed client-side via
-          app/api/capsules/[id], never SSR'd. */}
-      {feed.claimableSealed ? (
-        <SealedEnvelope capsuleId={feed.claimableSealed.id} />
-      ) : null}
     </main>
   );
 }
