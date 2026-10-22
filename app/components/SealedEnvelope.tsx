@@ -105,7 +105,7 @@ export default function SealedEnvelope({
     );
   };
 
-  const handleKeepSecret = async () => {
+  const handleDelete = async () => {
     if (
       typeof window !== "undefined" &&
       !window.confirm("امسح الرسالة نهائيًا؟ مش هتقدر ترجعها بعد كده.")
@@ -120,14 +120,14 @@ export default function SealedEnvelope({
       <section className="card p-4" aria-label="رسالة مختومة">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
-            <span className="seal-glyph" aria-hidden="true" /> رسالة مختومة مستنياك
+            <span className="seal-glyph" aria-hidden="true" /> رسالة مقفولة
           </p>
           <button type="button" className="btn btn-sm btn-ghost" onClick={() => setStage("sealed")}>
             افتحها دلوقتي
           </button>
         </div>
         <p className="mt-2 text-xs" style={{ color: "var(--ink-muted)" }}>
-          تقدر تكمّل جلسة التركيز الأول — الرسالة مش هتضيع.
+          افتحها دلوقتي أو بعدين.
         </p>
       </section>
     );
@@ -142,28 +142,27 @@ export default function SealedEnvelope({
       >
         <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
           {stage === "pinned"
-            ? "اتثبتت الرسالة على حيطة الترابيزة."
+            ? "اتحفظت."
             : "اتمسحت الرسالة بعد تأكيدك — ومش هتظهر تاني."}
         </p>
         <button type="button" onClick={() => router.refresh()} className="btn btn-sm btn-ghost mt-3">
-          حدّث الحيطة
+          حدّث
         </button>
       </section>
     );
   }
 
   return (
-    <section className="sealed-envelope card reveal reveal-delay-2 p-5" aria-label="رسالة مختومة للي بعدك">
+    <section className="sealed-envelope card reveal reveal-delay-2 p-5" aria-label="رسالة مختومة">
       {stage === "sealed" ? (
         <>
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-base font-bold" style={{ color: "var(--ink)" }}>
-            <span className="seal-glyph" aria-hidden="true" />
-            رسالة مختومة للي قعد قبلك
+                <span className="seal-glyph" aria-hidden="true" /> رسالة مقفولة
               </p>
               <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--ink-muted)" }}>
-                افتحها لما تكون مستعد. ولو مش وقتها، سيبها مستنياك.
+                افتحها لما تحب.
               </p>
             </div>
             <span className="envelope-mark" aria-hidden="true" />
@@ -202,15 +201,12 @@ export default function SealedEnvelope({
             </button>
           ) : (
             <>
-              <p className="mt-4 text-sm font-semibold" style={{ color: "var(--ink)" }}>
-                تحب تعمل إيه بالرسالة؟
-              </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button type="button" onClick={handlePin} disabled={busy || !claimed} className="btn btn-primary flex-1">
-                  {busy ? "بنحفظ…" : "ثبّت على الحيطة"}
+                  {busy ? "بنحفظ…" : "اعرضها"}
                 </button>
-                <button type="button" onClick={handleKeepSecret} disabled={busy || !claimed} className="btn btn-danger flex-1">
-                  امسحها سرًا
+                <button type="button" onClick={handleDelete} disabled={busy || !claimed} className="btn btn-danger flex-1">
+                  احذفها
                 </button>
               </div>
             </>

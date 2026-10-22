@@ -11,39 +11,29 @@ export default function Corkboard({
   if (capsules.length === 0) {
     return (
       <section
-        aria-label="لوحة الفلين بتاعة المكتب"
+        aria-label="لوحة الرسائل"
         className="board-section reveal reveal-delay-1"
       >
         <div className="board-heading">
-          <div>
-            <p className="section-kicker">01 / THE WALL</p>
-            <h2>آخر أثر على الترابيزة</h2>
-          </div>
-          <span className="board-count">00 <small>أثر</small></span>
+          <h2>آخر رسالة</h2>
         </div>
         <div className="board-empty">
           <span className="pin-mark" aria-hidden="true" />
-          <p>مفيش أثر هنا لسه. كن أول واحد سيب حاجة.</p>
+          <p>مفيش رسائل هنا لسه.</p>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="board-section reveal reveal-delay-1" aria-label="لوحة الفلين بتاعة المكتب">
+    <section className="board-section reveal reveal-delay-1" aria-label="لوحة الرسائل">
       <div className="board-heading">
-        <div>
-          <p className="section-kicker">01 / THE WALL</p>
-          <h2>آخر أثر على الترابيزة</h2>
-        </div>
-        <span className="board-count">
-          {String(capsules.length).padStart(2, "0")} <small>أثر حي</small>
-        </span>
+        <h2>آخر رسالة</h2>
       </div>
       {sealedPendingCount > 0 && (
         <p className="sealed-hint">
           <span className="seal-glyph" aria-hidden="true" />
-          مظروف مختوم مستني اللي بعدك
+          رسالة مقفولة للي بعدك
         </p>
       )}
       <div className="board-surface">
@@ -52,7 +42,7 @@ export default function Corkboard({
         {capsules.length > 1 ? (
           <details className="history-drawer">
             <summary>
-              شوف الرسائل الأقدم <span>({capsules.length - 1})</span>
+              رسائل أقدم <span>({capsules.length - 1})</span>
             </summary>
             <ul>
               {capsules.slice(1).map((capsule) => (

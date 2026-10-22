@@ -17,10 +17,8 @@ import ArtifactComposer, {
  */
 export default function DeskInteraction({
   deskId,
-  prompt,
 }: {
   deskId: string;
-  prompt: string;
 }) {
   const router = useRouter();
   const [signingToken, setSigningToken] = useState<string | null>(null);
@@ -99,24 +97,21 @@ export default function DeskInteraction({
   return (
     <section className="interaction-shell reveal reveal-delay-2">
       <div className="interaction-intro">
-        <p className="section-kicker">02 / YOUR TURN</p>
-        <h2>سيب أثر للي بعدك.</h2>
+        <h2>عايز تكتب حاجة؟</h2>
         <p>
-          عشر دقايق تركيز، وبعدها جملة صغيرة تكمل حكاية الترابيزة.
+          بعد التركيز، اكتب أي حاجة لو حابب.
         </p>
       </div>
       <div className="interaction-stack">
         <FocusTimer
           key={focusCycle}
           deskId={deskId}
-          prompt={prompt}
           onSessionStarted={() => router.refresh()}
           onSessionComplete={rememberSigningToken}
         />
         {signingToken ? (
           <ArtifactComposer
             deskId={deskId}
-            prompt={prompt}
             signingToken={signingToken}
             onPublished={handlePublished}
             onCancel={restartFocus}

@@ -1,7 +1,6 @@
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { getDeskFeed } from "@/lib/feed";
-import { getDeskPrompt } from "@/lib/prompts";
 import {
   getAnonymousDeviceHash,
   getDeviceHashFromCookies,
@@ -42,15 +41,15 @@ export default async function DeskPage({
             className="mt-4 text-xl font-bold"
             style={{ color: "var(--ink)" }}
           >
-            {deskId ? "الترابيزة دي مش موجودة" : "امسح QR ترابيزة"}
+            {deskId ? "الاستيكر ده مش شغال" : "امسح QR عشان تبدأ"}
           </h1>
           <p
             className="mt-2 text-sm leading-relaxed"
             style={{ color: "var(--ink-muted)" }}
           >
             {deskId
-              ? <>الكود <bdi dir="ltr">{deskId}</bdi> مش مسجّل. اتأكد من الاستيكر وامسح تاني.</>
-              : "دوّر على استيكر DeskLore على ترابيزة في المكتبة، امسح الـ QR، وافتح حيطة الترابيزة دي."}
+              ? "اتأكد إنك ماسح QR صح وجرّب تاني."
+              : "امسح استيكر DeskLore من على ترابيزة في المكتبة."}
           </p>
           <Link href="/" className="btn btn-ghost btn-block mt-6">
             امسح استيكر تاني
@@ -60,11 +59,9 @@ export default async function DeskPage({
     );
   }
 
-  const prompt = getDeskPrompt(feed.desk.id);
-
   return (
     <main className="desk-page">
-      <DeskHeader desk={feed.desk} prompt={prompt} />
+      <DeskHeader />
       <div className="desk-grid">
         <section className="desk-story">
           <Corkboard capsules={feed.capsules} sealedPendingCount={feed.sealedPendingCount} />
@@ -86,8 +83,8 @@ export default async function DeskPage({
           ) : null}
         </section>
 
-        {/* Read first, then commit to a short focus session and leave a message. */}
-        <DeskInteraction deskId={feed.desk.id} prompt={prompt} />
+        {/* Focus first, then write if you want. */}
+        <DeskInteraction deskId={feed.desk.id} />
       </div>
     </main>
   );

@@ -19,7 +19,6 @@ export interface CapsuleDto {
 
 export interface ArtifactComposerProps {
   deskId: string;
-  prompt: string;
   signingToken: string;
   onPublished: (capsule: CapsuleDto) => void;
   onCancel: () => void;
@@ -45,7 +44,6 @@ const ERROR_MESSAGES: Record<string, string> = {
  */
 export default function ArtifactComposer({
   deskId,
-  prompt,
   signingToken,
   onPublished,
   onCancel,
@@ -157,16 +155,16 @@ export default function ArtifactComposer({
       >
         <p className="text-sm font-bold text-accent">
           {published.type === "SEALED"
-            ? "رسالتك المختومة مستنّية اللي بعدك."
-            : `رسالتك اتثبتت على ترابيزة ${published.deskId}!`}
+            ? "الرسالة المقفولة مستنية اللي بعدك."
+            : "رسالتك ظهرت."}
         </p>
         <p className="mt-2 text-xs text-[color:var(--ink-muted)]">
           {published.type === "SEALED"
-            ? "اللي هيقعد هنا بعدك هو أول واحد يقدر يفتحها."
-            : "أنت كملت حكاية الترابيزة بجملة صغيرة للي بعدك."}
+            ? "اللي بعدك يقدر يفتحها."
+            : "تمام كده."}
         </p>
         <button type="button" onClick={onCancel} className="btn btn-ghost btn-block mt-4">
-          رجوع للحيطة
+          رجوع
         </button>
       </section>
     );
@@ -177,10 +175,10 @@ export default function ArtifactComposer({
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="text-base font-bold text-ink">
-            سيب رسالة للي هيقعد هنا بعدك — ترابيزة {deskId}
+            اكتب حاجة
           </p>
           <p className="mt-1 text-xs text-[color:var(--ink-muted)]">
-            {prompt}
+            أي حاجة على بالك — مثلاً فكرة، تشجيع، أو حاجة ساعدتك.
           </p>
         </div>
         <button type="button" onClick={onCancel} className="btn btn-sm btn-ghost">
@@ -198,9 +196,9 @@ export default function ArtifactComposer({
           onChange={(e) => setText(e.target.value)}
           maxLength={TEXT_MAX_CHARS}
           rows={4}
-          placeholder="إيه اللي حابب تسيبه للي بعدك؟ (لحد 160 حرف)"
+          placeholder="اكتب براحتك…"
           aria-invalid={errorCode === "text-too-long" || errorCode === "empty-capsule" ? true : undefined}
-          aria-describedby={error ? "compose-note-help compose-error" : "compose-note-help"}
+          aria-describedby={error ? "compose-error" : undefined}
           className="input mt-2"
           style={{ resize: "vertical", touchAction: "manipulation" }}
         />
@@ -216,9 +214,6 @@ export default function ArtifactComposer({
         >
           فاضّي {TEXT_MAX_CHARS - cleanedText.length} حرف
         </p>
-        <p id="compose-note-help" className="text-xs text-[color:var(--ink-muted)]">
-          اللينكات بتتمسح أوتوماتيك.
-        </p>
       </div>
 
       <label className="mt-3 flex items-center gap-2 text-sm text-ink">
@@ -229,7 +224,7 @@ export default function ArtifactComposer({
           className="accent-[var(--accent)]"
           style={{ width: 18, height: 18 }}
         />
-          <span className="seal-glyph" aria-hidden="true" /> للي بعدك بس (ظرف مختوم)
+          <span className="seal-glyph" aria-hidden="true" /> مقفولة للي بعدك
       </label>
 
       <div className="mt-4">
@@ -242,7 +237,7 @@ export default function ArtifactComposer({
           value={alias}
           onChange={(e) => setAlias(e.target.value.slice(0, ALIAS_MAX_CHARS))}
           maxLength={ALIAS_MAX_CHARS}
-          placeholder="مثلاً: طالب عمارة مصدوم"
+          placeholder="مثلاً: نور"
           dir="auto"
           aria-invalid={errorCode === "alias-too-long" ? true : undefined}
           aria-describedby={errorCode === "alias-too-long" && error ? "compose-error" : undefined}
@@ -276,9 +271,6 @@ export default function ArtifactComposer({
         {submitting ? "بيثبت…" : sealed ? "اختمها للي بعدك" : "ثبت الرسالة"}
       </button>
 
-      <p className="mt-3 text-center text-xs text-[color:var(--ink-faint)]">
-        جلسة واحدة، رسالة واحدة، وحكاية جديدة للترابيزة.
-      </p>
     </section>
   );
 }

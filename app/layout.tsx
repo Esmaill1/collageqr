@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "DeskLore",
-  description: "الكبسولة الزمنية للترابيزة — امسح الـ QR وسيب أثرك",
+  description: "اقرا، ركّز عشر دقايق، واكتب اللي على بالك.",
 };
 
 export const viewport: Viewport = {

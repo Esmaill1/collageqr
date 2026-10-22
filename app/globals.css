@@ -243,6 +243,33 @@ textarea:focus-visible, canvas:focus-visible {
   box-shadow: var(--shadow-lift);
 }
 
+.desk-hero-simple {
+  padding: clamp(20px, 3vw, 36px);
+  margin-bottom: clamp(28px, 4vw, 48px);
+}
+
+.desk-hero-simple::before {
+  width: clamp(140px, 22vw, 260px);
+  opacity: 0.45;
+}
+
+.desk-hero-simple::after { opacity: 0.22; }
+
+.desk-hero-simple .desk-hero-grid {
+  display: block;
+  padding-block: clamp(28px, 5vw, 56px) 0;
+}
+
+.desk-hero-simple .desk-title {
+  font-size: clamp(3.6rem, 10vw, 7rem);
+}
+
+.desk-hero-simple .desk-deck {
+  max-width: 28rem;
+  margin-top: 18px;
+  font-size: clamp(1rem, 1.8vw, 1.18rem);
+}
+
 .desk-hero::before {
   content: "";
   position: absolute;

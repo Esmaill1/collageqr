@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getDeskPrompt } from "../lib/prompts";
 import { hasDeferredCapsuleFields } from "../lib/pilot";
 import { isValidDeskId, parseDeskList } from "../lib/sticker";
 import { deviceHashFor } from "../lib/device";
@@ -9,11 +8,6 @@ import {
   normalizeNoteText,
   noteTextError,
 } from "../lib/text";
-
-test("desk prompts are stable for the same physical desk", () => {
-  assert.equal(getDeskPrompt("B14"), getDeskPrompt("B14"));
-  assert.notEqual(getDeskPrompt("B14"), undefined);
-});
 
 test("note normalization removes links before validating content", () => {
   assert.equal(
