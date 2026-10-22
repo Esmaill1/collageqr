@@ -78,7 +78,7 @@ export default function PeelOffButton({
   } else if (busy) {
     label = "بيتبعت…";
   } else {
-    label = "⚑ بلّغ";
+    label = "بلّغ";
   }
 
   const danger = state.kind !== "idle";

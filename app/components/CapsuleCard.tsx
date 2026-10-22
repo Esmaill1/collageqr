@@ -70,7 +70,7 @@ function TextBody({ capsule }: { capsule: CapsuleFeedItem }) {
   if (!text) return null;
   // Color is inherited: --sticky-ink on the sticky note, --ink elsewhere.
   return (
-    <p dir="auto" className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+    <p dir="auto" className="capsule-copy whitespace-pre-wrap break-words text-sm leading-relaxed">
       {text}
     </p>
   );
@@ -111,7 +111,7 @@ function CassetteBody({ capsule }: { capsule: CapsuleFeedItem }) {
           className="cassette-spin inline-block text-lg leading-none"
           aria-hidden="true"
         >
-          📼
+          <span className="cassette-glyph" />
         </span>
         <p className="text-sm leading-relaxed">
           {meta?.title ? (
@@ -165,7 +165,7 @@ function PassDoodleBody({ capsule }: { capsule: CapsuleFeedItem }) {
   return (
     <div>
       <p className="mb-2 text-xs font-semibold text-accent">
-        ✏️ رسمة جماعية
+        <span className="pencil-glyph" aria-hidden="true" /> رسمة جماعية
       </p>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -195,7 +195,7 @@ function bodyFor(capsule: CapsuleFeedItem) {
       return (
         <>
           <p className="mb-2 text-xs font-semibold text-accent">
-            ✉ مظروف متفتح
+            <span className="seal-glyph" aria-hidden="true" /> مظروف متفتح
           </p>
           <TextBody capsule={capsule} />
           <DoodleBody capsule={capsule} />
@@ -235,19 +235,16 @@ export default function CapsuleCard({
   const tone = capsule.type === "TEXT" ? "sticky" : "paper";
   return (
     <article
-      className={`card-pinned ${surface.className} ${tiltFor(capsule.id)}`}
-      style={
-        featured
-          ? {
-              ...surface.style,
-              outline: "2px solid var(--accent)",
-              outlineOffset: "2px",
-              boxShadow: "var(--shadow-lift)",
-            }
-          : surface.style
-      }
+      className={`card-pinned capsule-card ${surface.className} ${tiltFor(capsule.id)}${featured ? " capsule-card-featured" : ""}`}
+      style={surface.style}
     >
       <div className="pushpin" aria-hidden="true" />
+      {featured ? (
+        <div className="featured-stamp">
+          <span className="live-dot" aria-hidden="true" />
+          آخر رسالة / 01
+        </div>
+      ) : null}
       {bodyFor(capsule)}
       <CardFooter capsule={capsule} tone={tone} />
     </article>

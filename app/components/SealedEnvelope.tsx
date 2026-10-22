@@ -120,7 +120,7 @@ export default function SealedEnvelope({
       <section className="card p-4" aria-label="رسالة مختومة">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
-            ✉ رسالة مختومة مستنياك
+            <span className="seal-glyph" aria-hidden="true" /> رسالة مختومة مستنياك
           </p>
           <button type="button" className="btn btn-sm btn-ghost" onClick={() => setStage("sealed")}>
             افتحها دلوقتي
@@ -153,19 +153,20 @@ export default function SealedEnvelope({
   }
 
   return (
-    <section className="card p-5" aria-label="رسالة مختومة للي بعدك">
+    <section className="sealed-envelope card reveal reveal-delay-2 p-5" aria-label="رسالة مختومة للي بعدك">
       {stage === "sealed" ? (
         <>
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-base font-bold" style={{ color: "var(--ink)" }}>
-                ✉ رسالة مختومة للي قعد قبلك
+            <span className="seal-glyph" aria-hidden="true" />
+            رسالة مختومة للي قعد قبلك
               </p>
               <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--ink-muted)" }}>
                 افتحها لما تكون مستعد. ولو مش وقتها، سيبها مستنياك.
               </p>
             </div>
-            <span className="text-3xl" aria-hidden="true">✉️</span>
+            <span className="envelope-mark" aria-hidden="true" />
           </div>
           {error ? <p className="mt-3 text-sm font-semibold" style={{ color: "var(--danger)" }} role="alert">{error}</p> : null}
           <div className="mt-4 flex flex-wrap gap-2">
@@ -180,7 +181,7 @@ export default function SealedEnvelope({
       ) : (
         <>
           <p className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
-            {busy ? "بنرجّع الرسالة…" : "✉ الرسالة اتفتحت"}
+            {busy ? "بنرجّع الرسالة…" : <><span className="seal-glyph" aria-hidden="true" /> الرسالة اتفتحت</>}
           </p>
           {claimed?.authorAlias ? (
             <p className="mt-1 text-sm italic" style={{ color: "var(--ink-muted)" }} dir="auto">
@@ -206,10 +207,10 @@ export default function SealedEnvelope({
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button type="button" onClick={handlePin} disabled={busy || !claimed} className="btn btn-primary flex-1">
-                  {busy ? "بنحفظ…" : "📌 ثبّت على الحيطة"}
+                  {busy ? "بنحفظ…" : "ثبّت على الحيطة"}
                 </button>
                 <button type="button" onClick={handleKeepSecret} disabled={busy || !claimed} className="btn btn-danger flex-1">
-                  🤫 امسحها سرًا
+                  امسحها سرًا
                 </button>
               </div>
             </>

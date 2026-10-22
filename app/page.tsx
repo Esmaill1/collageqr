@@ -35,9 +35,9 @@ export default async function DeskPage({
 
   if (!deskId || !feed || !feed.desk) {
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col items-center justify-center px-5 text-center">
-        <div className="card w-full p-8">
-          <span className="text-4xl" aria-hidden="true">📌</span>
+      <main className="empty-page mx-auto flex min-h-dvh w-full max-w-[560px] flex-col items-center justify-center px-5 text-center">
+        <div className="empty-state card w-full p-8">
+          <span className="pin-mark" aria-hidden="true" />
           <h1
             className="mt-4 text-xl font-bold"
             style={{ color: "var(--ink)" }}
@@ -63,28 +63,32 @@ export default async function DeskPage({
   const prompt = getDeskPrompt(feed.desk.id);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col gap-8 px-4 pb-16 pt-6">
+    <main className="desk-page">
       <DeskHeader desk={feed.desk} prompt={prompt} />
-      <Corkboard capsules={feed.capsules} sealedPendingCount={feed.sealedPendingCount} />
+      <div className="desk-grid">
+        <section className="desk-story">
+          <Corkboard capsules={feed.capsules} sealedPendingCount={feed.sealedPendingCount} />
 
-      {/* The envelope is inline and deferable; secret content is claimed or
-          recovered client-side and is never SSR'd. */}
-      {feed.openedSealed ? (
-        <SealedEnvelope
-          key={`opened-${feed.openedSealed.id}`}
-          capsuleId={feed.openedSealed.id}
-          initiallyOpened
-        />
-      ) : null}
-      {feed.claimableSealed ? (
-        <SealedEnvelope
-          key={`claimable-${feed.claimableSealed.id}`}
-          capsuleId={feed.claimableSealed.id}
-        />
-      ) : null}
+          {/* The envelope is inline and deferable; secret content is claimed or
+              recovered client-side and is never SSR'd. */}
+          {feed.openedSealed ? (
+            <SealedEnvelope
+              key={`opened-${feed.openedSealed.id}`}
+              capsuleId={feed.openedSealed.id}
+              initiallyOpened
+            />
+          ) : null}
+          {feed.claimableSealed ? (
+            <SealedEnvelope
+              key={`claimable-${feed.claimableSealed.id}`}
+              capsuleId={feed.claimableSealed.id}
+            />
+          ) : null}
+        </section>
 
-      {/* Read first, then commit to a short focus session and leave a message. */}
-      <DeskInteraction deskId={feed.desk.id} prompt={prompt} />
+        {/* Read first, then commit to a short focus session and leave a message. */}
+        <DeskInteraction deskId={feed.desk.id} prompt={prompt} />
+      </div>
     </main>
   );
 }

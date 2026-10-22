@@ -12,69 +12,58 @@ export default function Corkboard({
     return (
       <section
         aria-label="لوحة الفلين بتاعة المكتب"
-        className="flex flex-col items-center justify-center px-6 py-10 text-center"
-        style={{
-          border: "1px dashed var(--grid-line)",
-          borderRadius: "var(--radius-lg)",
-          background: "var(--paper)",
-        }}
+        className="board-section reveal reveal-delay-1"
       >
-        <span aria-hidden="true" style={{ fontSize: "var(--text-3xl)" }}>
-          📌
-        </span>
-        <p
-          className="mt-2"
-          style={{ color: "var(--ink-muted)", fontSize: "var(--text-sm)" }}
-        >
-          مفيش أثر هنا لسه. كن أول واحد سيب حاجة.
-        </p>
+        <div className="board-heading">
+          <div>
+            <p className="section-kicker">01 / THE WALL</p>
+            <h2>آخر أثر على الترابيزة</h2>
+          </div>
+          <span className="board-count">00 <small>أثر</small></span>
+        </div>
+        <div className="board-empty">
+          <span className="pin-mark" aria-hidden="true" />
+          <p>مفيش أثر هنا لسه. كن أول واحد سيب حاجة.</p>
+        </div>
       </section>
     );
   }
 
   return (
-    <section aria-label="لوحة الفلين بتاعة المكتب">
-      <div
-        className="mb-3 flex items-center gap-2 text-sm font-semibold"
-        style={{ color: "var(--ink-muted)" }}
-      >
-        <span aria-hidden="true">💌</span>
-        <span>آخر رسالة من اللي قعد قبلك</span>
+    <section className="board-section reveal reveal-delay-1" aria-label="لوحة الفلين بتاعة المكتب">
+      <div className="board-heading">
+        <div>
+          <p className="section-kicker">01 / THE WALL</p>
+          <h2>آخر أثر على الترابيزة</h2>
+        </div>
+        <span className="board-count">
+          {String(capsules.length).padStart(2, "0")} <small>أثر حي</small>
+        </span>
       </div>
       {sealedPendingCount > 0 && (
-        <p
-          className="mb-4 px-4 py-3"
-          style={{
-            border: "1px solid var(--accent)",
-            borderRadius: "var(--radius-md)",
-            background: "var(--accent-soft)",
-            color: "var(--accent)",
-            fontSize: "var(--text-sm)",
-            fontWeight: 600,
-          }}
-        >
-          ✉ مظروف مختوم مستني اللي بعدك
+        <p className="sealed-hint">
+          <span className="seal-glyph" aria-hidden="true" />
+          مظروف مختوم مستني اللي بعدك
         </p>
       )}
-      <CapsuleCard capsule={capsules[0]} featured />
+      <div className="board-surface">
+        <CapsuleCard capsule={capsules[0]} featured />
 
-      {capsules.length > 1 ? (
-        <details className="card mt-5 overflow-hidden">
-          <summary
-            className="cursor-pointer px-4 py-3 text-sm font-semibold"
-            style={{ color: "var(--ink-muted)" }}
-          >
-            شوف الرسائل الأقدم ({capsules.length - 1})
-          </summary>
-          <ul className="columns-1 gap-4 border-t px-4 pt-4 sm:columns-2" style={{ borderColor: "var(--grid-line)" }}>
-            {capsules.slice(1).map((capsule) => (
-              <li key={capsule.id} className="mb-4 break-inside-avoid">
-                <CapsuleCard capsule={capsule} />
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
+        {capsules.length > 1 ? (
+          <details className="history-drawer">
+            <summary>
+              شوف الرسائل الأقدم <span>({capsules.length - 1})</span>
+            </summary>
+            <ul>
+              {capsules.slice(1).map((capsule) => (
+                <li key={capsule.id}>
+                  <CapsuleCard capsule={capsule} />
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
+      </div>
     </section>
   );
 }

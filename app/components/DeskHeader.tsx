@@ -12,40 +12,50 @@ export default function DeskHeader({
   const hours = (desk.totalMinutes / 60).toFixed(1);
 
   return (
-    <header className="card mb-6" style={{ padding: "var(--space-6)" }}>
-      <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "var(--accent)" }}>
-        DeskLore · حكايات الترابيزات
-      </p>
-      <h1
-        className="font-bold"
-        style={{ color: "var(--ink)", fontSize: "var(--text-2xl)", lineHeight: 1.25 }}
-      >
-        ترابيزة <bdi dir="ltr">{desk.id}</bdi>
-      </h1>
-      <p
-        className="mt-1"
-        style={{ color: "var(--ink-muted)", fontSize: "var(--text-sm)" }}
-      >
-        {desk.zoneName}
-      </p>
-
-      <div
-        className="flex flex-wrap items-center gap-x-4 gap-y-2"
-        style={{ marginTop: "var(--space-6)" }}
-      >
-        <span className="pill" style={{ color: "var(--ink-muted)" }}>
-          {hours} ساعة تركيز اتجمعت هنا
-        </span>
+    <header className="desk-hero reveal">
+      <div className="desk-hero-topline">
+        <p className="brand-lockup">
+          <span className="brand-mark" aria-hidden="true" />
+          DeskLore <span aria-hidden="true">/</span> حكايات الترابيزات
+        </p>
+        <p className="live-status">
+          <span className="live-dot" aria-hidden="true" />
+          حيّة دلوقتي
+        </p>
       </div>
 
-      <div
-        className="mt-6 rounded-lg p-4"
-        style={{ background: "var(--accent-soft)", color: "var(--ink)" }}
-      >
-        <p className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
-          سؤال الترابيزة
-        </p>
-        <p className="mt-1 text-sm font-semibold">{prompt}</p>
+      <div className="desk-hero-grid">
+        <div className="desk-hero-copy">
+          <p className="section-kicker">01 / A SHARED DESK</p>
+          <h1 className="desk-title">
+            <span>ترابيزة</span>
+            <bdi dir="ltr">{desk.id}</bdi>
+          </h1>
+          <p className="desk-deck">
+            مكان واحد. ناس كتير. أثر صغير يعدّي من طالب لطالب.
+          </p>
+        </div>
+
+        <div className="desk-stat-card" aria-label="إحصائيات الترابيزة">
+          <p className="desk-stat-label">وقت اتجمع هنا</p>
+          <p className="desk-stat-value">
+            {hours}<span> س</span>
+          </p>
+          <p className="desk-stat-meta">{desk.zoneName}</p>
+        </div>
+      </div>
+
+      <div className="desk-prompt-card">
+        <span className="prompt-index">السؤال المفتوح</span>
+        <p>{prompt}</p>
+      </div>
+
+      <div className="desk-flow" aria-label="طريقة استخدام DeskLore">
+        <span><b>01</b> اقرأ</span>
+        <i aria-hidden="true" />
+        <span><b>02</b> ركّز</span>
+        <i aria-hidden="true" />
+        <span><b>03</b> سيب أثر</span>
       </div>
     </header>
   );

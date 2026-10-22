@@ -229,7 +229,7 @@ export default function ArtifactComposer({
           className="accent-[var(--accent)]"
           style={{ width: 18, height: 18 }}
         />
-        ✉ للي بعدك بس (ظرف مختوم)
+          <span className="seal-glyph" aria-hidden="true" /> للي بعدك بس (ظرف مختوم)
       </label>
 
       <div className="mt-4">

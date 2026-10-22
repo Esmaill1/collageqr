@@ -5,9 +5,7 @@ export default function LeaderboardPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col items-center justify-center px-4 text-center">
       <section className="card w-full p-8">
-        <p className="text-4xl" aria-hidden="true">
-          💌
-        </p>
+        <span className="envelope-mark" aria-hidden="true" />
         <h1 className="mt-4 text-xl font-bold" style={{ color: "var(--ink)" }}>
           ترتيب الترابيزات لسه مستني
         </h1>

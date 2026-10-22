@@ -97,25 +97,34 @@ export default function DeskInteraction({
   );
 
   return (
-    <div className="flex flex-col gap-[var(--space-4)]">
-      <FocusTimer
-        key={focusCycle}
-        deskId={deskId}
-        prompt={prompt}
-        onSessionStarted={() => router.refresh()}
-        onSessionComplete={rememberSigningToken}
-      />
-      {signingToken ? (
-        <ArtifactComposer
+    <section className="interaction-shell reveal reveal-delay-2">
+      <div className="interaction-intro">
+        <p className="section-kicker">02 / YOUR TURN</p>
+        <h2>سيب أثر للي بعدك.</h2>
+        <p>
+          عشر دقايق تركيز، وبعدها جملة صغيرة تكمل حكاية الترابيزة.
+        </p>
+      </div>
+      <div className="interaction-stack">
+        <FocusTimer
+          key={focusCycle}
           deskId={deskId}
           prompt={prompt}
-          signingToken={signingToken}
-          onPublished={handlePublished}
-          onCancel={restartFocus}
-          onRestart={restartFocus}
-          onRefresh={refreshAfterAlreadyPublished}
+          onSessionStarted={() => router.refresh()}
+          onSessionComplete={rememberSigningToken}
         />
-      ) : null}
-    </div>
+        {signingToken ? (
+          <ArtifactComposer
+            deskId={deskId}
+            prompt={prompt}
+            signingToken={signingToken}
+            onPublished={handlePublished}
+            onCancel={restartFocus}
+            onRestart={restartFocus}
+            onRefresh={refreshAfterAlreadyPublished}
+          />
+        ) : null}
+      </div>
+    </section>
   );
 }
